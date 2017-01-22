@@ -66,14 +66,15 @@ for i in $list; do
     b=$(echo $i|cut -d '/' -f1)
     router=$(($(batctl -m $b o|grep "^\ \*"|wc -l)-0 ))
     clients=$(grep -cEo "\[.*W.*\]+" /sys/kernel/debug/batman_adv/$b/transtable_global)
-    gateways=$(($(batctl -m $b gwl|grep -A 999 outgoingIf|grep -v outgoingIf|wc -l ) +1)) # i do not see myself...
+    owngw=$(batctl -m $b gw|cut -d" " -f1|sed s/server/1/|sed s/off/0/)
+    gateways=$(($(batctl -m $b gwl|grep -A 999 outgoingIf|grep -v outgoingIf|wc -l ) + $owngw)) 
     claims=$(batctl -m $b cl|wc -l )
     ips=$(( $(batctl -m $b dc|wc -l) - 2))
     wlow=$(( $router * 20 / 100 ))
     clow=$(( $router * 5 / 100 ))
     wlimit=$(( $router * 5 ))
     climit=$(( $router * 10 ))
-    echo "P Batman-$b Router=$router.0;5:350;1:500|Clients=$clients.0;$wlow.0:$wlimit.0;$clow.0:$climit.0|Claims=$claims.0|Gateways=$gateways.0;0:3;0:5;|IPs=$ips.0";
+    echo "P Batman-$b Router=$router.0;5:350;1:500|Clients=$clients.0;$wlow.0:$wlimit.0;$clow.0:$climit.0|Claims=$claims.0;0:9999;0:9999|Gateways=$gateways.0;0:3;0:5;|IPs=$ips.0;0:9999;0:9999";
    fi;
 done
 
