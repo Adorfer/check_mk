@@ -15,12 +15,12 @@ function conflines # get lines from file $1 mathing $2, stripped of # and ; comm
 
 ## static data
 kernel=$(uname -r);
-release=$(lsb_release -ds);
+release=$(lsb_release -ds 2>/dev/nul);
 
 ## ubuntu-Status
 echo "0 Ubuntu-Release Ubuntu-Release=$release; $release - Kernel $kernel"
 ## ubuntu patch status
-osversion=$(lsb_release -a|grep Description|cut -d: -f2|xargs)
+osversion=$(lsb_release -a 2>/dev/nul|grep Description|cut -d: -f2|xargs)
 nupdates=0
 supdates=0
 if [[ $osversion = "Ubuntu 14.04"* ]] ; then
