@@ -50,7 +50,7 @@ for i in $list; do
     router=$(($(batctl -m $b o|grep "^\ \*"|wc -l)-0 ))
     clients=$(grep -cEo "\[.*W.*\]+" /sys/kernel/debug/batman_adv/$b/transtable_global)
     gateways=$(($(batctl -m $b gwl|grep -A 999 outgoingIf|grep -v outgoingIf|wc -l ) +1)) # i do not see myself...
-    claims=$(($(batctl -m $b cl|grep -A 999 outgoingIf|grep -v outgoingIf|wc -l ) +1))
+    claims=$(batctl -m $b cl|wc -l ) 
     ips=$(( $(batctl -m $b dc|wc -l) - 2))
     wlow=$(( $router * 20 / 100 ))
     clow=$(( $router * 5 / 100 ))
