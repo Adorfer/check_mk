@@ -23,7 +23,6 @@ fastd_version=$(fastd -v|cut -d ' ' -f 2);
 kernel=$(uname -r);
 release=$(lsb_release -ds);
 
-
 ## ubuntu-Status
 bat_version=$(batctl -v);
 fastd_version=$(fastd -v|cut -d ' ' -f 2);
@@ -47,7 +46,7 @@ for i in $list; do
   z=$(ls /sys/kernel/debug/batman_adv/$i|wc -l)
   if [ $z -ge 9 ]; then
     b=$(echo $i|cut -d '/' -f1)
-    router=$(($(batctl -m $b o|grep "^\ \*"|wc -l)-0 ))
+    router=$(batctl -m $b o|grep "^\ \*"|wc -l)
     clients=$(grep -cEo "\[.*W.*\]+" /sys/kernel/debug/batman_adv/$b/transtable_global)
     owngw=$(batctl -m $b gw|cut -d" " -f1|sed s/server/1/|sed s/off/0/)
     gateways=$(($(batctl -m $b gwl|grep -A 999 outgoingIf|grep -v outgoingIf|wc -l ) + $owngw))
@@ -92,7 +91,6 @@ if [ -r /opt/eulenfunk/dhcpleases ] ; then
   actcrit=$(($totalleases * 90 / 100))
   echo "P Dhcp-Leases active-leases=$activeleases.0;5:$actwarn;1:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases";
  fi
-
 
 ## Logins
 logincount=$(who|wc -l)
