@@ -55,7 +55,7 @@ for i in $list; do
     clow=$(( $router * 5 / 100 ))
     wlimit=$(( $router * 5 ))
     climit=$(( $router * 10 ))
-    echo "P Batman-$b Router=$router.0;5:250;1:500|Clients=$clients.0;$wlow.0:$wlimit.0;$clow.0:$climit.0|Gateways=$gateways.0;0:3;0:5;|IPs=$ips.0";
+    echo "P Batman-$b Router=$router.0;5:350;1:500|Clients=$clients.0;$wlow.0:$wlimit.0;$clow.0:$climit.0|Gateways=$gateways.0;0:3;0:5;|IPs=$ips.0";
    fi;
  done
 
