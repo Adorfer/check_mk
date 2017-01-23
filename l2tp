@@ -15,12 +15,12 @@ function conflines # get lines from file $1 mathing $2, stripped of # and ; comm
 
 ## static data
 kernel=$(uname -r);
-release=$(lsb_release -ds);
+release=$(lsb_release -ds 2>/dev/nul);
 
 ## ubuntu-Status
 echo "0 Ubuntu-Release Ubuntu-Release=$release; $release - Kernel $kernel"
 ## ubuntu patch status
-osversion=$(lsb_release -a|grep Description|cut -d: -f2|xargs)
+osversion=$(lsb_release -a 2>/dev/nul|grep Description|cut -d: -f2|xargs)
 nupdates=0
 supdates=0
 if [[ $osversion = "Ubuntu 14.04"* ]] ; then
@@ -55,6 +55,29 @@ while read line; do
  done<$TFILE
 rm $TFILE
 echo "$logout"
+
+## Batman
+bat_version=$(batctl -v);
+echo "0 Batman-Version Version=$bat_version; $bat_version"
+list=$(ls -F /sys/kernel/debug/batman_adv|grep /)
+for i in $list; do
+  z=$(ls /sys/kernel/debug/batman_adv/$i|wc -l)
+  if [ $z -ge 9 ]; then
+    b=$(echo $i|cut -d '/' -f1)
+    router=$(($(batctl -m $b o|grep "^\ \*"|wc -l)-0 ))
+    clients=$(grep -cEo "\[.*W.*\]+" /sys/kernel/debug/batman_adv/$b/transtable_global)
+    owngw=$(batctl -m $b gw|cut -d" " -f1|sed s/server/1/|sed s/off/0/)
+    gateways=$(($(batctl -m $b gwl|grep -A 999 outgoingIf|grep -v outgoingIf|wc -l ) + $owngw)) 
+    claims=$(batctl -m $b cl|wc -l )
+    ips=$(( $(batctl -m $b dc|wc -l) - 2))
+    wlow=$(( $router * 20 / 100 ))
+    clow=$(( $router * 5 / 100 ))
+    wlimit=$(( $router * 5 ))
+    climit=$(( $router * 10 ))
+    echo "P Batman-$b Router=$router.0;5:350;1:500|Clients=$clients.0;$wlow.0:$wlimit.0;$clow.0:$climit.0|Claims=$claims.0;0:9999;0:9999|Gateways=$gateways.0;0:3;0:5;|IPs=$ips.0;0:9999;0:9999";
+   fi;
+done
+
 
 #Get data
 l_tunnel=$(ip a |grep l2tp|grep tunneldigger -c);
