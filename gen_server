@@ -20,7 +20,7 @@ release=$(lsb_release -ds);
 ## ubuntu-Status
 echo "0 Ubuntu-Release Ubuntu-Release=$release; $release - Kernel $kernel"
 ## ubuntu patch status
-osversion=$(lsb_release -a|grep Description|cut -d: -f2|xargs)
+osversion=$(lsb_release -a 2>/dev/null|grep Description|cut -d: -f2|xargs)
 nupdates=0
 supdates=0
 if [[ $osversion = "Ubuntu 14.04"* ]] ; then
@@ -55,23 +55,5 @@ while read line; do
  done<$TFILE
 rm $TFILE
 echo "$logout"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
