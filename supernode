@@ -36,7 +36,7 @@ reboot=0
 if [ -x /usr/lib/update-notifier/update-motd-reboot-required ]; then
   reboot=$(/usr/lib/update-notifier/update-motd-reboot-required|grep \*\*\**\*\*\*|wc -l)
  fi
-echo "P Ubuntu-Patchstatus SecurityUpdates-waiting=$supdates.0;0:0.5;0:1|RegularUpdates-waiting=$nupdates.0;0:15;0:25|Reboot-waiting=$reboot.0;0:0.5;0:1"
+echo "P Ubuntu-Patchstatus SecurityUpdates-waiting=$supdates.0;0:0.5;0:1|RegularUpdates-waiting=$nupdates.0;0:20;0:30|Reboot-waiting=$reboot.0;0:0.5;0:1"
 
 ## Batman
 echo "0 Batman-Version Version=$bat_version; $bat_version"
@@ -94,7 +94,8 @@ if [ -r /opt/eulenfunk/dhcpleases ] ; then
  fi
   dhtest=1
 if [ -r /opt/eulenfunk/dhtest ] ; then
-  dhtest=$(/opt/eulenfunk/dhtest -i $dhcpinterface -h check_mk -T 5|grep "DHCP ack received")
+  dhtest=$(/opt/eulenfunk/dhtest -i $dhcpinterface -m ca:b1:e9:fa:b1:77 -h check_mk -T 5|grep "DHCP ack received"|wc -l)
+  rm "ca:b1:e9:fa:b1:77"
  fi
   dhcpstatus=$leasesage$dhcprunning$dhtest
   actwarn=$(($totalleases * 75 / 100))
@@ -107,11 +108,11 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
   dnsmasqrunning=$(ps ax |grep dnsmasq.pid|grep resolv.conf|wc -l)
   ipv4=$(ip -4 a s br0|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
   ipv6=$(ip -4 a s br0|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
-  dns4via4=$(dig @$ipv4 A $testhost|grep -v ";"|grep A|grep $testhost|wc -l)
-  dns6via4=$(dig @$ipv4 AAAA $testhost|grep -v ";"|grep AAAA|grep $testhost|wc -l)
-  dns4via6=$(dig @$ipv6 A $testhost|grep -v ";"|grep A|grep $testhost|wc -l)
-  dns6via6=$(dig @$ipv6 AAAA $testhost|grep -v ";"|grep AAAA|grep $testhost|wc -l)
-  dnsstatus=$dnsmasqrunning$dns4via4$dns6via4$dns6via4$dns6via6
+  dns4via4=$(dig @$ipv4 A $testhost|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
+  dns6via4=$(dig @$ipv4 AAAA $testhost|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
+  dns4via6=$(dig @$ipv6 A $testhost|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
+  dns6via6=$(dig @$ipv6 AAAA $testhost|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
+  dnsstatus=$dnsmasqrunning$dns4via4$dns6via6$dns4via6$dns6via4
   echo "P Dns dnsstatus=$dnsstatus.0;11111:11111;11111:11111 dnsmasqrunning=$dnsmasqrunning dns4via4=$dns4via4 dns6via6=$dns6via6 dns4via6=$dns4via6 dns6via4=$dns6via4";
 
 ## Logins
