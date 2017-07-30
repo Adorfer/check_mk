@@ -80,10 +80,10 @@ for fasti in $list ; do
 ## isc-dhcpd-server
 # leasescheck
 # needs script https://github.com/eulenfunk/scripts/blob/master/dhcpleases
+# needs dhtest from https://github.com/saravana815/dhtest compiled
   dhcpconf=/etc/dhcp/dhcpd.conf
   dhcpinterface=$(confline $dhcpconf "interface "|cut -d" " -f2)
   dhcprunning=$(ps ax|grep dhcpd.pid|grep dhcpd.conf|wc -l)
-  dhcpstatus=$leasesage$dhcprunning
   leasesage=$((($(date +%s) - $(date +%s -r "/var/lib/dhcp/dhcpd.leases")) / 60 ))
   dhcprange=$(confline $dhcpconf range)
   dhcpstart=$(echo $dhcprange|cut -d" " -f2)
@@ -93,9 +93,14 @@ if [ -r /opt/eulenfunk/dhcpleases ] ; then
   activeleases=$(/opt/eulenfunk/dhcpleases|grep "^| Total"|cut -d":" -f2|sed s/\ //)
   remainingleases=$(($totalleases - $activeleases))
  fi
+  dhtest=1
+if [ -r /opt/eulenfunk/dhtest ] ; then
+  dhtest=$(/opt/eulenfunk/dhtest -i $dhcpinterface -h check_mk -T 5|grep "DHCP ack received")
+ fi
+  dhcpstatus=$leasesage$dhcprunning$dhtest
   actwarn=$(($totalleases * 75 / 100))
   actcrit=$(($totalleases * 90 / 100))
-  echo "P Dhcp-Leases serverstatus=$dhcpstatus.0;1:301;1:1201|active-leases=$activeleases.0;5:$actwarn;1:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases dhcpdrunning=$dhcprunning leasesage=$leasesage";
+  echo "P Dhcp-Leases serverstatus=$dhcpstatus.0;11:3011;11:12011|active-leases=$activeleases.0;5:$actwarn;1:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases dhcpdrunning=$dhcprunning leasesage=$leasesage dhtest=$dhtest";
 
 ## DNS check
 # dnsmasq running
