@@ -36,7 +36,7 @@ reboot=0
 if [ -x /usr/lib/update-notifier/update-motd-reboot-required ]; then
   reboot=$(/usr/lib/update-notifier/update-motd-reboot-required|grep \*\*\**\*\*\*|wc -l)
  fi
-echo "P Ubuntu-Patchstatus SecurityUpdates-waiting=$supdates.0;0:0.5;0:1|RegularUpdates-waiting=$nupdates.0;0:25;0:40|Reboot-waiting=$reboot.0;0:0.5;0:1"
+echo "P Ubuntu-Patchstatus SecurityUpdates-waiting=$supdates.0;0:0.5;0:1|RegularUpdates-waiting=$nupdates.0;0:10;0:15|Reboot-waiting=$reboot.0;0:0.5;0:1"
 
 
 ## Batman
@@ -46,18 +46,18 @@ for i in $list; do
   z=$(ls /sys/kernel/debug/batman_adv/$i|wc -l)
   if [ $z -ge 9 ]; then
     b=$(echo $i|cut -d '/' -f1)
-    router=$(batctl -m $b o|grep "^\ \*"|wc -l)
+    router=$(($(batctl -m $b o|grep "^\ \*"|wc -l)-0 ))
     clients=$(grep -cEo "\[.*W.*\]+" /sys/kernel/debug/batman_adv/$b/transtable_global)
     owngw=$(batctl -m $b gw|cut -d" " -f1|sed s/server/1/|sed s/off/0/)
     gateways=$(($(batctl -m $b gwl|grep -A 999 outgoingIf|grep -v outgoingIf|wc -l ) + $owngw))
-    claims=$(batctl -m $b cl|wc -l ) 
+    claims=$(batctl -m $b cl|wc -l )
     ips=$(( $(batctl -m $b dc|wc -l) - 2))
     wlow=$(( $router * 20 / 100 ))
     clow=$(( $router * 5 / 100 ))
     wlimit=$(( $router * 5 ))
     climit=$(( $router * 10 ))
-    echo "P Batman-$b Router=$router.0;5:350;1:500|Clients=$clients.0;$wlow.0:$wlimit.0;$clow.0:$climit.0|Gateways=$gateways.0;0:3;0:5;";
-  fi;
+    echo "P Batman-$b Router=$router.0;5:350;1:500|Clients=$clients.0;$wlow.0:$wlimit.0;$clow.0:$climit.0|Claims=$claims.0;0:9999;0:9999|Gateways=$gateways.0;0:3;0:5;|IPs=$ips.0;0:9999;0:9999";
+   fi;
  done
 
 ## Fastd
@@ -77,20 +77,38 @@ for fasti in $list ; do
   echo "P Fastd_Clients_$interface Clients=$clients.0;$wlow:$wlimit;$clow:$climit; Interface: $interface, Port: $port, MTU: $mtu, Peer Limit: $limit"
  done
 
-## isc-dhcpd-server leases
+## isc-dhcpd-server
+# leasescheck
 # needs script https://github.com/eulenfunk/scripts/blob/master/dhcpleases
-if [ -r /opt/eulenfunk/dhcpleases ] ; then
   dhcpconf=/etc/dhcp/dhcpd.conf
+  dhcpinterface=$(confline $dhcpconf "interface "|cut -d" " -f2)
+  dhcprunning=$(ps ax|grep dhcpd.pid|grep dhcpd.conf|wc -l)
+  dhcpstatus=$leasesage$dhcprunning
+  leasesage=$((($(date +%s) - $(date +%s -r "/var/lib/dhcp/dhcpd.leases")) / 60 ))
   dhcprange=$(confline $dhcpconf range)
   dhcpstart=$(echo $dhcprange|cut -d" " -f2)
   dhcpend=$(echo $dhcprange|cut -d" " -f3)
   totalleases=$(($(ati $dhcpend) - $(ati $dhcpstart)))
+if [ -r /opt/eulenfunk/dhcpleases ] ; then
   activeleases=$(/opt/eulenfunk/dhcpleases|grep "^| Total"|cut -d":" -f2|sed s/\ //)
   remainingleases=$(($totalleases - $activeleases))
+ fi
   actwarn=$(($totalleases * 75 / 100))
   actcrit=$(($totalleases * 90 / 100))
-  echo "P Dhcp-Leases active-leases=$activeleases.0;5:$actwarn;1:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases";
- fi
+  echo "P Dhcp-Leases serverstatus=$dhcpstatus.0;1:301;1:1201|active-leases=$activeleases.0;5:$actwarn;1:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases dhcpdrunning=$dhcprunning leasesage=$leasesage";
+
+## DNS check
+# dnsmasq running
+  testhost=www.google.com
+  dnsmasqrunning=$(ps ax |grep dnsmasq.pid|grep resolv.conf|wc -l)
+  ipv4=$(ip -4 a s br0|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
+  ipv6=$(ip -4 a s br0|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
+  dns4via4=$(dig @$ipv4 A $testhost|grep -v ";"|grep A|grep $testhost|wc -l)
+  dns6via4=$(dig @$ipv4 AAAA $testhost|grep -v ";"|grep AAAA|grep $testhost|wc -l)
+  dns4via6=$(dig @$ipv6 A $testhost|grep -v ";"|grep A|grep $testhost|wc -l)
+  dns6via6=$(dig @$ipv6 AAAA $testhost|grep -v ";"|grep AAAA|grep $testhost|wc -l)
+  dnsstatus=$dnsmasqrunning$dns4via4$dns6via4$dns6via4$dns6via6
+  echo "P Dns dnsstatus=$dnsstatus.0;11111:11111;11111:11111 dnsmasqrunning=$dnsmasqrunning dns4via4=$dns4via4 dns6via6=$dns6via6 dns4via6=$dns4via6 dns6via4=$dns6via4";
 
 ## Logins
 logincount=$(who|wc -l)
