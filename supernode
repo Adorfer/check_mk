@@ -116,7 +116,7 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
   echo "P Dns dnsstatus=$dnsstatus.0;11111:11111;11111:11111 dnsmasqrunning=$dnsmasqrunning dns4via4=$dns4via4 dns6via6=$dns6via6 dns4via6=$dns4via6 dns6via4=$dns6via4";
 
 ## radvd check (warum auch immer da 2 Prozesse laufen, es scheint so sein zu müssen)
-  radvdrunning=$(ps ax |grep radvd.conf|grep -v grep|wc -l)
+  radvdrunning=$(ps ax |grep radvd.pid|grep -v grep|wc -l)
   radvdstatus=$(echo $(ps ax |grep radvd.pid|grep -v grep|cut -c16)|tr -d "/n"|tr -d " ")
   echo "P radvd radvdprocs=$radvdrunning.0;2:2;2:2 radvdstatus=$radvdstatus";
 
