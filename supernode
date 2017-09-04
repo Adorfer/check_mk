@@ -107,11 +107,11 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
   testhost=www.google.com
   dnsmasqrunning=$(ps ax |grep dnsmasq.pid|grep resolv.conf|wc -l)
   ipv4=$(ip -4 a s br0|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
-  ipv6=$(ip -4 a s br0|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
-  dns4via4=$(dig @$ipv4 A $testhost|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
-  dns6via4=$(dig @$ipv4 AAAA $testhost|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
-  dns4via6=$(dig @$ipv6 A $testhost|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
-  dns6via6=$(dig @$ipv6 AAAA $testhost|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
+  ipv6=$(ip -6 a s br0|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
+  dns4via4=$(dig @$ipv4 A $testhost +time=1|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
+  dns6via4=$(dig @$ipv4 AAAA $testhost +time=1|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
+  dns4via6=$(dig @$ipv6 A $testhost +time=1|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
+  dns6via6=$(dig @$ipv6 AAAA $testhost +time=1|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
   dnsstatus=$dnsmasqrunning$dns4via4$dns6via6$dns4via6$dns6via4
   echo "P Dns dnsstatus=$dnsstatus.0;11111:11111;11111:11111 dnsmasqrunning=$dnsmasqrunning dns4via4=$dns4via4 dns6via6=$dns6via6 dns4via6=$dns4via6 dns6via4=$dns6via4";
 
