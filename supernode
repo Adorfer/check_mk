@@ -108,8 +108,9 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
 ## FFRL Uplinkcheck
   testipv6=2001:4860:4860::8888 # google-dns
   testhost=www.google.com
+  br0ipv4=$(ip addr show br0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
   ffrlv6=$(ping6 -c2 -I $SUPERNODE_TRANS_INTERFACE $testipv6>/dev/null 2>1; echo $?)
-  ffrlv4=$(wget -t1 --bind-address=10.11.128.1 --spider http://www.google.de>/dev/null 2>1;echo $?)
+  ffrlv4=$(wget -t1 --bind-address=$br0ipv4 --spider http://www.google.de>/dev/null 2>1;echo $?)
   echo "P ffrl uplinkfail=$ffrlv6$ffrlv4.0;0:0;0:0"
 ## DNS check
 # dnsmasq running
