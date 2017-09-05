@@ -23,6 +23,9 @@ fastd_version=$(fastd -v|cut -d ' ' -f 2);
 kernel=$(uname -r);
 release=$(lsb_release -ds);
 
+BASE=/opt/eulenfunk/supernode
+. ${BASE}/supernode.vars
+
 ## ubuntu-Status
 bat_version=$(batctl -v);
 fastd_version=$(fastd -v|cut -d ' ' -f 2);
@@ -95,23 +98,32 @@ if [ -r /opt/eulenfunk/dhcpleases ] ; then
   dhtest=1
 if [ -r /opt/eulenfunk/dhtest ] ; then
   dhtest=$(/opt/eulenfunk/dhtest -i $dhcpinterface -m ca:b1:e9:fa:b1:77 -h check_mk -T 5|grep "DHCP ack received"|wc -l)
-  rm "ca:b1:e9:fa:b1:77"
+  rm -f "ca:b1:e9:fa:b1:77"
  fi
   dhcpstatus=$leasesage$dhcprunning$dhtest
   actwarn=$(($totalleases * 75 / 100))
   actcrit=$(($totalleases * 90 / 100))
   echo "P Dhcp-Leases serverstatus=$dhcpstatus.0;11:3011;11:12011|active-leases=$activeleases.0;5:$actwarn;1:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases dhcpdrunning=$dhcprunning leasesage=$leasesage dhtest=$dhtest";
 
+## FFRL Uplinkcheck
+  testipv6=2001:4860:4860::8888 # google-dns
+  testhost=www.google.com
+  ffrlv6=$(ping6 -c2 -I $SUPERNODE_TRANS_INTERFACE $testipv6>/dev/null 2>1; echo $?)
+  ffrlv4=$(wget -t1 --bind-address=10.11.128.1 --spider http://www.google.de>/dev/null 2>1;echo $?)
+  echo "P ffrl uplinkfail=$ffrlv6$ffrlv4.0;0:0;0:0"
 ## DNS check
 # dnsmasq running
-  testhost=www.google.com
   dnsmasqrunning=$(ps ax |grep dnsmasq.pid|grep resolv.conf|wc -l)
-  ipv4=$(ip -4 a s br0|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
-  ipv6=$(ip -6 a s br0|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
-  dns4via4=$(dig @$ipv4 A $testhost +time=1|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
-  dns6via4=$(dig @$ipv4 AAAA $testhost +time=1|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
-  dns4via6=$(dig @$ipv6 A $testhost +time=1|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
-  dns6via6=$(dig @$ipv6 AAAA $testhost +time=1|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
+  if [ "$dnsmaqrunning" == "1" ]; then
+    ipv4=$(ip -4 a s br0|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
+    ipv6=$(ip -6 a s br0|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
+    dns4via4=$(dig @$ipv4 A $testhost +time=1|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
+    dns6via4=$(dig @$ipv4 AAAA $testhost +time=1|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
+    dns4via6=$(dig @$ipv6 A $testhost +time=1|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
+    dns6via6=$(dig @$ipv6 AAAA $testhost +time=1|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
+   else
+    dns4via4=0; dns6via4=0; dns4via6=0; dns6via6=0;
+   fi
   dnsstatus=$dnsmasqrunning$dns4via4$dns6via6$dns4via6$dns6via4
   echo "P Dns dnsstatus=$dnsstatus.0;11111:11111;11111:11111 dnsmasqrunning=$dnsmasqrunning dns4via4=$dns4via4 dns6via6=$dns6via6 dns4via6=$dns4via6 dns6via4=$dns6via4";
 
