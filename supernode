@@ -25,6 +25,8 @@ release=$(lsb_release -ds);
 
 BASE=/opt/eulenfunk/supernode
 . ${BASE}/supernode.vars
+. ${BASE}/supernode.config
+
 
 ## ubuntu-Status
 bat_version=$(batctl -v);
@@ -106,12 +108,17 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
   echo "P Dhcp-Leases serverstatus=$dhcpstatus.0;11:3011;11:12011|active-leases=$activeleases.0;5:$actwarn;1:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases dhcpdrunning=$dhcprunning leasesage=$leasesage dhtest=$dhtest";
 
 ## FFRL Uplinkcheck
+
   testipv6=2001:4860:4860::8888 # google-dns
   testhost=www.google.com
+  konzintv6=$(echo $SUPERNODE_IPV6_PREFIX|cut -d"/" -f1)1
+  konzintv4=$(echo $SUPERNODE_IPV4_TRANS_ADDR|cut -d"." -f1-3).254
   br0ipv4=$(ip addr show br0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
-  ffrlv6=$(ping6 -c2 -I $SUPERNODE_TRANS_INTERFACE $testipv6>/dev/null 2>1; echo $?)
+  konzv6=$(ping6 -c1 -I $SUPERNODE_TRANS_INTERFACE $konzintv6 >/dev/null 2>1; echo $?)
+  konzv4=$(ping -c1 -I $SUPERNODE_TRANS_INTERFACE $konzintv4 >/dev/null 2>1;echo $?)
+  ffrlv6=$(ping6 -c1 -I $SUPERNODE_TRANS_INTERFACE $testipv6 >/dev/null 2>1; echo $?)
   ffrlv4=$(wget -t1 --bind-address=$br0ipv4 --spider http://www.google.de>/dev/null 2>1;echo $?)
-  echo "P ffrl uplinkfail=$ffrlv6$ffrlv4.0;0:0;0:0"
+  echo "P ffrl uplinkfail=$konzv6$konzv4$ffrlv6$ffrlv4.0;0:0;0:0 PingErrors KonzV6:$konzv6 KonzV4:$konzv4 PublicV6:$ffrlv6 PublicV4:$ffrlv4"
 ## DNS check
 # dnsmasq running
   dnsmasqrunning=$(ps ax |grep dnsmasq.pid|grep resolv.conf|wc -l)
