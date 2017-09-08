@@ -111,11 +111,20 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
 
   testipv6=2001:4860:4860::8888 # google-dns
   testhost=www.google.com
-  konzintv6=$(echo $SUPERNODE_IPV6_PREFIX|cut -d"/" -f1)1
-  konzintv4=$(echo $SUPERNODE_IPV4_TRANS_ADDR|cut -d"." -f1-3).254
   br0ipv4=$(ip addr show br0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
-  konzv6=$(ping6 -c1 -I $SUPERNODE_TRANS_INTERFACE $konzintv6 >/dev/null 2>1; echo $?)
-  konzv4=$(ping -c1 -I $SUPERNODE_TRANS_INTERFACE $konzintv4 >/dev/null 2>1;echo $?)
+
+  if [ ! "$SUPERNODE_IPV4_TRANS_ADDR" == "#" ]; then
+    konzintv4=$(echo $SUPERNODE_IPV4_TRANS_ADDR|cut -d"." -f1-3).254
+    konzv4=$(ping -c1 -I $SUPERNODE_TRANS_INTERFACE $konzintv4 >/dev/null 2>1;echo $?)
+   else
+    konzv4="0"
+   fi
+  if [ ! "$SUPERNODE_IPV6_PREFIX" == "#" ]; then
+    konzintv6=$(echo $SUPERNODE_IPV6_PREFIX|cut -d"/" -f1)1
+    konzv6=$(ping6 -c1 -I $SUPERNODE_TRANS_INTERFACE $konzintv6 >/dev/null 2>1; echo $?)
+   else
+    konzv6="0"
+   fi
   ffrlv6=$(ping6 -c1 -I $SUPERNODE_TRANS_INTERFACE $testipv6 >/dev/null 2>1; echo $?)
   ffrlv4=$(wget -t1 --bind-address=$br0ipv4 --spider http://www.google.de>/dev/null 2>1;echo $?)
   echo "P ffrl uplinkfail=$konzv6$konzv4$ffrlv6$ffrlv4.0;0:0;0:0 PingErrors KonzV6:$konzv6 KonzV4:$konzv4 PublicV6:$ffrlv6 PublicV4:$ffrlv4"
