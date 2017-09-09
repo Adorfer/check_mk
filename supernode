@@ -115,7 +115,6 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
   if [ ! "$SUPERNODE_IPV4_TRANS_ADDR" == "#" ]; then
     konzintv4=$(echo $SUPERNODE_IPV4_TRANS_ADDR|cut -d"." -f1-3).254
     konzv4=$(ping -c1 -I $SUPERNODE_TRANS_INTERFACE $konzintv4 >/dev/null 2>1;echo $?)
-  echo   konzv4 ping -c1 -I $SUPERNODE_TRANS_INTERFACE $konzintv4
    else
     konzv4="0"
    fi
