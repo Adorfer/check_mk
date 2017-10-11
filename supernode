@@ -108,7 +108,8 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
   echo "P Dhcp-Leases serverstatus=$dhcpstatus.0;11:3011;11:12011|active-leases=$activeleases.0;5:$actwarn;1:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases dhcpdrunning=$dhcprunning leasesage=$leasesage dhtest=$dhtest";
 
 ## FFRL Uplinkcheck
-  testipv6=2001:4860:4860::8888 # google-dns
+  testipv6a=2001:4860:4860::8888 # google-dns
+  testipv6b=2620:0:ccc::2 # opendns
   testhost=www.google.com
   br0ipv4=$(ip addr show br0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 
@@ -121,7 +122,10 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
   if [ ! "$SUPERNODE_IPV6_PREFIX" == "#" ]; then
     konzintv6=$(echo $SUPERNODE_IPV6_PREFIX|cut -d"/" -f1)1
     konzv6=$(ping6 -c1 -I $SUPERNODE_TRANS_INTERFACE $konzintv6 >/dev/null 2>1; echo $?)
-    ffrlv6=$(ping6 -c1 -I $SUPERNODE_TRANS_INTERFACE $testipv6 >/dev/null 2>1; echo $?)
+    ffrlv6=$(ping6 -c1 -I $SUPERNODE_TRANS_INTERFACE $testipv6a >/dev/null 2>1; echo $?)
+    if [ ! "$ffrlv6" == "0" ]; then
+      ffrlv6=$(ping6 -c1 -I $SUPERNODE_TRANS_INTERFACE $testipv6b >/dev/null 2>1; echo $?)
+     fi
    else
     konzv6="0"
     ffrlv6="0"
