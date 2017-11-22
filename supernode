@@ -121,16 +121,16 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
    fi
   if [ ! "$SUPERNODE_IPV6_PREFIX" == "#" ]; then
     konzintv6=$(echo $SUPERNODE_IPV6_PREFIX|cut -d"/" -f1)1
-    konzv6=$(ping6 -c1 -I $SUPERNODE_TRANS_INTERFACE $konzintv6 >/dev/null 2>1; echo $?)
-    ffrlv6=$(ping6 -c1 -I $SUPERNODE_TRANS_INTERFACE $testipv6a >/dev/null 2>1; echo $?)
+    konzv6=$(ping6 -c1 -i 0.5 -I $SUPERNODE_TRANS_INTERFACE $konzintv6 >/dev/null 2>1; echo $?)
+    ffrlv6=$(ping6 -c1 -i 0.5 -I $SUPERNODE_TRANS_INTERFACE $testipv6a >/dev/null 2>1; echo $?)
     if [ ! "$ffrlv6" == "0" ]; then
-      ffrlv6=$(ping6 -c1 -I $SUPERNODE_TRANS_INTERFACE $testipv6b >/dev/null 2>1; echo $?)
+      ffrlv6=$(ping6 -c1 -i 0.5 -I $SUPERNODE_TRANS_INTERFACE $testipv6b >/dev/null 2>1; echo $?)
      fi
    else
     konzv6="0"
     ffrlv6="0"
    fi
-  ffrlv4=$(wget -t1 --bind-address=$br0ipv4 --spider http://www.google.de>/dev/null 2>1;echo $?)
+  ffrlv4=$(wget -t1 -T1 --bind-address=$br0ipv4 --spider http://www.google.de>/dev/null 2>1;echo $?)
   echo "P ffrl uplinkfail=$konzv6$konzv4$ffrlv6$ffrlv4.0;0:0;0:0 PingErrors KonzV6:$konzv6 KonzV4:$konzv4 PublicV6:$ffrlv6 PublicV4:$ffrlv4"
 
 ## DNS check
