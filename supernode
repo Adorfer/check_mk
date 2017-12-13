@@ -18,11 +18,6 @@ function ati # ipv4 to longint
 }
 
 ## static data
-bat_version=$(batctl -v);
-fastd_version=$(fastd -v|cut -d ' ' -f 2);
-kernel=$(uname -r);
-release=$(lsb_release -ds);
-
 BASE=/opt/eulenfunk/supernode
 . ${BASE}/supernode.vars
 . ${BASE}/supernode.config
