@@ -40,22 +40,22 @@ echo "P Ubuntu-Patchstatus SecurityUpdates-waiting=$supdates.0;0:0.5;0:1|Regular
 
 ## Batman
 echo "0 Batman-Version Version=$bat_version; $bat_version"
-list=$(ls -F /sys/kernel/debug/batman_adv|grep /)
-for i in $list; do
-  z=$(ls /sys/kernel/debug/batman_adv/$i|wc -l)
-  if [ $z -ge 9 ]; then
-    b=$(echo $i|cut -d '/' -f1)
+#list=$(ls -F /sys/kernel/debug/batman_adv|grep /)
+list=$(ip link|grep ",UP,"|cut -d" " -f2|tr -d ":")
+for b in $list; do
+  z=$( batctl -m $b o 2> /dev/null | wc -l )
+  if [ $z -ge 1 ]; then
     router=$(($(batctl -m $b o|grep "^\ \*"|wc -l)-0 ))
     clients=$(batctl -m $b tg| grep "^\ \*"|grep -cEo "\[.*W.*\]+")
     owngw=$(batctl -m $b gw|cut -d" " -f1|sed s/server/1/|sed s/off/0/)
     gateways=$(($(batctl -m $b gwl|grep -A 999 outgoingIf|grep -v outgoingIf|wc -l ) + $owngw))
     claims=$(batctl -m $b cl|wc -l )
-    ips=$(( $(batctl -m $b dc|wc -l) - 2))
+#    ips=$(( $(batctl -m $b dc 2> /dev/null |wc -l) - 2))
     wlow=$(( $router * 20 / 100 ))
     clow=$(( $router * 5 / 100 ))
     wlimit=$(( $router * 5 ))
     climit=$(( $router * 10 ))
-    echo "P Batman-$b Router=$router.0;5:350;1:500|Clients=$clients.0;$wlow.0:$wlimit.0;$clow.0:$climit.0|Claims=$claims.0;0:9999;0:9999|Gateways=$gateways.0;0:3;0:5;|IPs=$ips.0;0:9999;0:9999";
+    echo "P Batman-$b Router=$router.0;5:350;1:500|Clients=$clients.0;$wlow.0:$wlimit.0;$clow.0:$climit.0|Claims=$claims.0;0:9999;0:9999|Gateways=$gateways.0;0:3;0:5";
    fi;
  done
 
