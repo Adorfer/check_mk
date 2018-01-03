@@ -24,7 +24,10 @@ BASE=/opt/eulenfunk/supernode
 
 
 ## ubuntu-Status
-bat_version=$(batctl -v);
+bat_version=$(batctl -v)
+bat_adv_v=$(batctl -v|cut -d" " -f4|tr -d "]")
+bat_ctl_v=$(batctl -v|cut -d" " -f2)
+
 fastd_version=$(fastd -v|cut -d ' ' -f 2);
 kernel=$(uname -r);
 release=$(lsb_release -ds);
@@ -39,7 +42,12 @@ if [ -x /usr/lib/update-notifier/update-motd-reboot-required ]; then
 echo "P Ubuntu-Patchstatus SecurityUpdates-waiting=$supdates.0;0:0.5;0:1|RegularUpdates-waiting=$nupdates.0;0:20;0:30|Reboot-waiting=$reboot.0;0:0.5;0:1"
 
 ## Batman
-echo "0 Batman-Version Version=$bat_version; $bat_version"
+batadvequal=2
+if [ "$bat_adv_v" == "$bat_ctl_v" ] ; then
+  batadvequal=1
+ fi
+
+echo "P Batman-Version kernelvsctl=$batadvequal;1:1;0:2 versions:$bat_version"
 #list=$(ls -F /sys/kernel/debug/batman_adv|grep /)
 list=$(ip link|grep ",UP,"|cut -d" " -f2|tr -d ":")
 for b in $list; do
