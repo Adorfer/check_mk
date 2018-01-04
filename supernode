@@ -24,11 +24,6 @@ BASE=/opt/eulenfunk/supernode
 
 
 ## ubuntu-Status
-bat_version=$(batctl -v)
-bat_adv_v=$(batctl -v|cut -d" " -f4|tr -d "]")
-bat_ctl_v=$(batctl -v|cut -d" " -f2)
-
-fastd_version=$(fastd -v|cut -d ' ' -f 2);
 kernel=$(uname -r);
 release=$(lsb_release -ds);
 echo "0 Ubuntu-Release Ubuntu-Release=$release; $release - Kernel $kernel"
@@ -41,7 +36,10 @@ if [ -x /usr/lib/update-notifier/update-motd-reboot-required ]; then
  fi
 echo "P Ubuntu-Patchstatus SecurityUpdates-waiting=$supdates.0;0:0.5;0:1|RegularUpdates-waiting=$nupdates.0;0:20;0:30|Reboot-waiting=$reboot.0;0:0.5;0:1"
 
-## Batman
+## Batman-Advanced 
+bat_version=$(batctl -v)
+bat_adv_v=$(batctl -v|cut -d" " -f4|tr -d "]")
+bat_ctl_v=$(batctl -v|cut -d" " -f2)
 batadvequal=2
 if [ "$bat_adv_v" == "$bat_ctl_v" ] ; then
   batadvequal=1
@@ -68,6 +66,7 @@ for b in $list; do
  done
 
 ## Fastd
+fastd_version=$(fastd -v|cut -d ' ' -f 2);
 echo "0 Fastd_Version Version=$fastd_version; Fastd $fastd_version ";
 fastdp=/etc/fastd
 list=$(ls -F $fastdp|grep /|cut -d '/' -f 1)
