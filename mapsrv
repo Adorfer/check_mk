@@ -68,6 +68,9 @@ if [ "$bat_adv_v" == "$bat_ctl_v" ] ; then
 echo "P Batman-Version kernelvsctl=$batadvequal;1:1;0:2 versions:$bat_version"
 #list=$(ls -F /sys/kernel/debug/batman_adv|grep /)
 list=$(ip link|grep ",UP,"|cut -d" " -f2|tr -d ":")
+if [[ $list != *"bat0"* ]]; then
+  list="$list bat0"
+ fi
 for b in $list; do
   z=$( batctl -m $b o 2> /dev/null | wc -l )
   if [ $z -ge 1 ]; then
