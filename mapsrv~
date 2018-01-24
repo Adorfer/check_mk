@@ -113,7 +113,7 @@ for b in $list; do
     if [ -x /opt/eulenfunk/dhtest/dhtest ] ; then
       pushd /tmp >/dev/null
       clientmac=ca:b1:e9:fa:b1:78
-      dhtestack=$(/opt/eulenfunk/dhtest/dhtest -i $b -m $clientmac -h check_mk -T 5|grep "DHCP ack received")
+      dhtestack=$(/opt/eulenfunk/dhtest/dhtest -i $b -m $clientmac -h check_mk -T 6|grep "DHCP ack received")
       dhtest=0
       dhtestip=0
       if [ -n "$dhtestack" ] ; then
