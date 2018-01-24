@@ -130,16 +130,14 @@ if [ -r /opt/eulenfunk/dhcpleases ] ; then
 if [ -r /opt/eulenfunk/dhtest ] ; then
   pushd /tmp
   clientmac=ca:b1:e9:fa:b1:77
-  dhtestack=$(/opt/eulenfunk/dhtest -i $dhcpinterface -m $clientmac -h check_mk -T 5|grep "DHCP ack received")
-  dhtest=$(echo $dhtestack|wc -l)
-  dhtestip=(echo $dhtestack|cut -d":" -f2)
+  dhtest=$(/opt/eulenfunk/dhtest -i $dhcpinterface -m $clientmac -h check_mk -T 5|grep "DHCP ack received"|wc -l)
   rm -f "$clientmac"
   popd
  fi
   dhcpstatus=$leasesage$dhcprunning$dhtest
   actwarn=$(($totalleases * 75 / 100))
   actcrit=$(($totalleases * 90 / 100))
-  echo "P Dhcp-Leases serverstatus=$dhcpstatus.0;11:3011;11:12011|active-leases=$activeleases.0;5:$actwarn;1:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases dhcpdrunning=$dhcprunning leasesage=$leasesage dhtest=$dhtest $dhtestack";
+  echo "P Dhcp-Leases serverstatus=$dhcpstatus.0;11:3011;11:12011|active-leases=$activeleases.0;5:$actwarn;1:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases dhcpdrunning=$dhcprunning leasesage=$leasesage dhtest=$dhtest";
 
 ## FFRL Uplinkcheck
   testipv6a=2001:4860:4860::8888 # google-dns
