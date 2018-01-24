@@ -99,7 +99,6 @@ for b in $list; do
     clients=$(batctl -m $b tg| grep "^\ \*"|grep -cEo "\[.*W.*\]+")
     owngw=$(batctl -m $b gw|cut -d" " -f1|sed s/server/1/|sed s/off/0/)
     gateways=$(($(batctl -m $b gwl|grep -A 999 outgoingIf|grep -v outgoingIf|wc -l ) + $owngw))
-    claims=$(batctl -m $b cl|wc -l )
     ips=$(( $(batctl -m $b dc|wc -l) - 2))
     clientwarnlow=$(( $checkclients * 2 / 100 ))
     clientcritlow=$(( $checkclients * 1 / 100 ))
@@ -122,9 +121,9 @@ for b in $list; do
        fi
       rm -f "$clientmac"
       popd >/dev/null
-      echo "P Batman-$b Router=$router.0;$routerwarnlow.0:$routerwarnhigh.0;$routercritlow.0:$routercrithigh.0|Clients=$clients.0;$clientwarnlow.0:$clientwarnhigh.0;$clientcritlow.0:$clientcrithigh.0|Claims=$claims.0;0:9999;0:9999|Gateways=$gateways.0;$checkgw.0:$checkgw.0;$checkgw.0:$checkgw.0;|IPs=$ips.0;0:9999;0:9999|dhtest=$dhtest.0;1:1;1:1 dhtestip=$dhtestip";
+      echo "P Batman-$b Router=$router.0;$routerwarnlow.0:$routerwarnhigh.0;$routercritlow.0:$routercrithigh.0|Clients=$clients.0;$clientwarnlow.0:$clientwarnhigh.0;$clientcritlow.0:$clientcrithigh.0|Gateways=$gateways.0;$checkgw.0:$checkgw.0;$checkgw.0:$checkgw.0;|IPs=$ips.0;0:9999;0:9999|dhtest=$dhtest.0;1:1;1:1 dhtestip=$dhtestip";
      else
-      echo "P Batman-$b Router=$router.0;$routerwarnlow.0:$routerwarnhigh.0;$routercritlow.0:$routercrithigh.0|Clients=$clients.0;$clientwarnlow.0:$clientwarnhigh.0;$clientcritlow.0:$clientcrithigh.0|Claims=$claims.0;0:9999;0:9999|Gateways=$gateways.0;$checkgw.0:$checkgw.0;$checkgw.0:$checkgw.0;|IPs=$ips.0;0:9999;0:9999";
+      echo "P Batman-$b Router=$router.0;$routerwarnlow.0:$routerwarnhigh.0;$routercritlow.0:$routercrithigh.0|Clients=$clients.0;$clientwarnlow.0:$clientwarnhigh.0;$clientcritlow.0:$clientcrithigh.0|Gateways=$gateways.0;$checkgw.0:$checkgw.0;$checkgw.0:$checkgw.0;|IPs=$ips.0;0:9999;0:9999";
      fi
    fi;
 done
