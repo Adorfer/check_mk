@@ -18,9 +18,6 @@ supdates=$(apt-get upgrade -s 2>/dev/null| grep ^Security |wc -l)
 nupdates=0
 nupdates=$(apt-get upgrade -s 2>/dev/null| grep ^Inst |wc -l)
 
-
-
-
 # Temperature sensors
 TFILE="/tmp/$(basename $0).$$.tmp"
 /usr/bin/sensors > $TFILE
