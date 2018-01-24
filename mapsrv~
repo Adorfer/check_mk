@@ -79,7 +79,6 @@ if [ "$bat_adv_v" == "$bat_ctl_v" ] ; then
   batadvequal=1
  fi
 
-
 echo "P Batman-Version kernelvsctl=$batadvequal;1:1;0:2 versions:$bat_version"
 #list=$(ls -F /sys/kernel/debug/batman_adv|grep /)
 list=$(ip link|grep ",UP,"|cut -d" " -f2|tr -d ":")
@@ -87,9 +86,9 @@ if [[ $list != *"bat0"* ]]; then
   list="$list bat0"
  fi
 for b in $list; do
-  z=$( batctl -m $b o 2>/dev/null | wc -l )
+  z=$( batctl -m $b o 2> /dev/null | wc -l )
   if [ $z -ge 1 ]; then
-#    b=$(echo $i|cut -d '/' -f1)
+    b=$(echo $i|cut -d '/' -f1)
     sitename=$(echo $b|cut -b5-)
     checkbat=$(conflines /opt/eulenfunk/map/sites instance|grep "\ $sitename")
     checkgw=$(echo $checkbat|cut -d" " -f 8)
@@ -109,23 +108,7 @@ for b in $list; do
     routercritlow=$(( $checkrouter * 5 / 100 ))
     routerwarnhigh=$(( $checkrouter * 80 / 100 ))
     routercrithigh=$(( $checkrouter  ))
-    # needs dhtest from https://github.com/saravana815/dhtest compiled
-    if [ -x /opt/eulenfunk/dhtest/dhtest ] ; then
-      pushd /tmp >/dev/null
-      clientmac=ca:b1:e9:fa:b1:78
-      dhtestack=$(/opt/eulenfunk/dhtest/dhtest -i $b -m $clientmac -h check_mk -T 5|grep "DHCP ack received")
-      dhtest=0
-      dhtestip=0
-      if [ -n "$dhtestack" ] ; then
-        dhtest=$(echo $dhtestack|wc -l)
-        dhtestip=$(echo $dhtestack|cut -d":" -f2|tr -d " ")
-       fi
-      rm -f "$clientmac"
-      popd >/dev/null
-      echo "P Batman-$b Router=$router.0;$routerwarnlow.0:$routerwarnhigh.0;$routercritlow.0:$routercrithigh.0|Clients=$clients.0;$clientwarnlow.0:$clientwarnhigh.0;$clientcritlow.0:$clientcrithigh.0|Claims=$claims.0;0:9999;0:9999|Gateways=$gateways.0;$checkgw.0:$checkgw.0;$checkgw.0:$checkgw.0;|IPs=$ips.0;0:9999;0:9999|dhtest=$dhtest.0;1:1;1:1 dhtestip=$dhtestip";
-     else
-      echo "P Batman-$b Router=$router.0;$routerwarnlow.0:$routerwarnhigh.0;$routercritlow.0:$routercrithigh.0|Clients=$clients.0;$clientwarnlow.0:$clientwarnhigh.0;$clientcritlow.0:$clientcrithigh.0|Claims=$claims.0;0:9999;0:9999|Gateways=$gateways.0;$checkgw.0:$checkgw.0;$checkgw.0:$checkgw.0;|IPs=$ips.0;0:9999;0:9999";
-     fi
+    echo "P Batman-$b Router=$router.0;$routerwarnlow.0:$routerwarnhigh.0;$routercritlow.0:$routercrithigh.0|Clients=$clients.0;$clientwarnlow.0:$clientwarnhigh.0;$clientcritlow.0:$clientcrithigh.0|Claims=$claims.0;0:9999;0:9999|Gateways=$gateways.0;$checkgw.0:$checkgw.0;$checkgw.0:$checkgw.0;|IPs=$ips.0;0:9999;0:9999";
    fi;
 done
 
