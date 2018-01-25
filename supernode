@@ -128,8 +128,10 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
   pushd /tmp >/dev/null
   clientmac=ca:b1:e9:fa:b1:77
   dhtestack=$(/opt/eulenfunk/dhtest -i $dhcpinterface -m $clientmac -h check_mk -T 6|grep "DHCP ack received")
-  dhtest=$(echo $dhtestack|wc -l)
-  dhtestip=(echo $dhtestack|cut -d":" -f2)
+  if [ -n "$dhtestack" ] ; then
+    dhtest=$(echo $dhtestack|wc -l)
+    dhtestip=$(echo $dhtestack|cut -d":" -f2)
+   fi
   rm -f "$clientmac"
   popd >/dev/null
  fi
