@@ -55,7 +55,7 @@ if [ -x /usr/lib/update-notifier/update-motd-reboot-required ]; then
 if [ -x /var/run/reboot-required ]; then
   reboot=$(cat /var/run/reboot-required|grep \*\*\**\*\*\*|wc -l)
  fi
-if [ "$kernel" != "$latestbootkernel" ]; then
+if [ "$kernel" != "latestbootkernel" ]; then
   reboot=1
  fi
 echo "P Ubuntu-Patchstatus SecurityUpdates-waiting=$supdates.0;0:0.5;0:1|RegularUpdates-waiting=$nupdates.0;0:20;0:30|Reboot-waiting=$reboot.0;0:0.5;0:1"
