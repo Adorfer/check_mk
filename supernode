@@ -24,7 +24,7 @@ BASE=/opt/eulenfunk/supernode
 ## static data
 kernel=$(uname -r);
 release=$(lsb_release -ds);
-latestbootkernel=$(ls -t /boot/vmlinuz-* | sed "s/\/boot\/vmlinuz-//g" | head -n1)
+latestbootkernel=$(ls -t /boot/vmlinuz-* | sed "s/\/boot\/vmlinuz-//g" | sort -V | head -n1)
 
 ## ubuntu-Status
 echo "0 Ubuntu-Release Ubuntu-Release=$release; $release - Kernel $kernel; Boot $latestbootkernel"
