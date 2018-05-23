@@ -20,7 +20,7 @@ nupdates=$(apt-get upgrade -s 2>/dev/null| grep ^Inst |wc -l)
 
 
 kernel=$(uname -r);
-latestbootkernel=$(ls -t /boot/vmlinuz-* | sed "s/\/boot\/vmlinuz-//g" | head -n1)
+latestbootkernel=$(ls -t /boot/vmlinuz-* | sed "s/\/boot\/vmlinuz-//g" | sort -V | head -n1)
 
 if [ -f /var/run/reboot-required ]; then
   reboot=$(cat /var/run/reboot-required|grep \*\*\**\*\*\*|wc -l)
