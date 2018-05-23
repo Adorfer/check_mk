@@ -1,0 +1,20 @@
+#!/bin/bash
+#/usr/lib/check_mk_agent/local
+export LANG=de_DE.UTF-8
+
+## DNS check
+  if=ens3
+  testhost=fileserver.ffnef.de
+  bindrunning=$(ps ax |grep named|grep bind|wc -l)
+  if [ "$bindrunning" == "1" ]; then
+    ipv4=$(ip -4 a s $if|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
+    ipv6=$(ip -6 a s $if|grep inet|grep -v "deprecated"|cut -d" " -f6|cut -d"/" -f1|head -1)
+    dns4via4=$(dig @$ipv4 A $testhost +time=1|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
+    dns6via4=$(dig @$ipv4 AAAA $testhost +time=1|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
+    dns4via6=$(dig @$ipv6 A $testhost +time=1|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
+    dns6via6=$(dig @$ipv6 AAAA $testhost +time=1|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
+   else
+    dns4via4=0; dns6via4=0; dns4via6=0; dns6via6=0;
+   fi
+  dnsstatus=$bindrunning$dns4via4$dns6via6$dns4via6$dns6via4
+  echo "P Dns dnsstatus=$dnsstatus.0;11111:11111;11111:11111 bindrunning=$bindrunning dns4via4=$dns4via4 dns6via6=$dns6via6 dns4via6=$dns4via6 dns6via4=$dns6via4";
