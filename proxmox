@@ -44,18 +44,26 @@ while read line; do
     value=$(echo $values|cut -d" " -f1|tr -d "°C():;+,=-")
     high=$(echo $values|cut -d"h" -f2-10|cut -d" " -f3|tr -d "°C():;+,=-")
     crit=$(echo $values|cut -d"r" -f2-10|cut -d" " -f3|tr -d "°C():;+,=-")
-    if ( [[ $key == *power* ]] || [[ $key == *pwr* ]] ) ; then #TDP values are tight!
+    if ( [[ $key == *power* ]] || [[ $key == *pwr* ]] || [[ $key == *AUXTIN* ]] ) ; then #TDP values are tight! SYSTIN:
       high=$( bc <<< "$high + 10")
       crit=$( bc <<< "$crit + 10")
      fi
     # fallback values
-    if [[ $high != *"."* ]] ; then
+#    if  [[ $high != *"."* ]] ; then
+#      high=100
+#     fi
+#    if [[ $crit != *"."* ]] ; then
+#      crit=120
+#     fi
+    if  [[ $high != *"."* ]] || [[ $high = "0.0" ]]  ; then
       high=100
      fi
-    if [[ $crit != *"."* ]] ; then
+    if [[ $crit != *"."* ]] || [[ $crit != "0.0" ]] ; then
       crit=120
      fi
-    temper="$temper$prefix-$key=$value;0.1:$high;0.1:$crit|"
+    if ( [[ $key != "PECIAgent1" ]] ) ; then
+      temper="$temper$prefix-$key=$value;0.1:$high;0.1:$crit|"
+     fi
    fi
  done <$TFILE
 rm $TFILE
