@@ -1,0 +1,44 @@
+#!/bin/bash
+#/usr/lib/check_mk_agent/local
+
+export LANG=de_DE.UTF-8
+
+function confline # get first line from file $1 mathing $2, stripped of # and ; comment lines, stripped spaces and tabs down to spaces, remove trailing ;
+{
+ echo $(cat $1|grep -v '^$\|^\s*\#'|sed -e "s/[[:space:]]\+/ /g"|sed s/^\ //|sed s/\;//|grep -i "$2"|head -n 1)
+}
+
+function conflines # get lines from file $1 mathing $2, stripped of # and ; comment lines, stripped spaces and tabs down to spaces, remove trailing ;
+{
+ echo "$(cat $1|grep -v '^$\|^\s*\#'|sed -e "s/[[:space:]]\+/ /g"|sed s/^\ //|sed s/\;//|grep -i $2)"
+}
+
+## ubuntu patch status
+osversion=$(lsb_release -a 2>/dev/null|grep Description|cut -d: -f2|xargs)
+nupdates=0
+supdates=0
+if [[ $osversion = "Ubuntu 14.04"* && -x /usr/lib/update-notifier/update-motd-updates-available ]] ; then
+  nupdates=$(/usr/lib/update-notifier/update-motd-updates-available|grep -i 'packages\ can\ be\ updated\|Software-Pakete'|cut -d" " -f1)
+  supdates=$(/usr/lib/update-notifier/update-motd-updates-available|grep -i 'updates\ are\ security\ updates\|Sicherheitsaktualisierungen'|cut -d" " -f1)
+ fi
+if [[ $osversion = "Ubuntu 16.04"* && -x /var/lib/update-notifier/updates-available ]] ; then
+  nupdates=$(cat /var/lib/update-notifier/updates-available|grep -i 'packages\ can\ be\ updated\|Software-Pakete'|cut -d" " -f1)
+  supdates=$(cat /var/lib/update-notifier/updates-available|grep -i 'updates\ are\ security\ updates\|Sicherheitsaktualisierungen'|cut -d" " -f1)
+ elif [ -x /usr/lib/update-notifier/apt-check ] ; then
+  nupdates=$(/usr/lib/update-notifier/apt-check 2>&1 | cut -d ';' -f 1)
+  supdates=$(/usr/lib/update-notifier/apt-check 2>&1 | cut -d ';' -f 2)
+ else
+#  nupdates=$(apt list --upgradable 2>/dev/null|grep -c "]$")
+  supdates=0; supdates=$(apt-get upgrade -s 2>/dev/null| grep ^Security |wc -l)
+  nupdates=0; nupdates=$(apt-get upgrade -s 2>/dev/null| grep ^Inst |wc -l)
+ fi
+
+reboot=0
+if [ -f /var/run/reboot-required ]; then
+  reboot=$(cat /var/run/reboot-required|grep \*\*\**\*\*\*|wc -l)
+ fi
+if [ "$kernel" != "$latestbootkernel" ]; then
+  reboot=1
+ fi
+echo "P Ubuntu-Patchstatus SecurityUpdates-waiting=$supdates.0;0:0.9;0:2|RegularUpdates-waiting=$nupdates.0;0:25;0:40|Reboot-waiting=$reboot.0;0:0.9;0:1"
+

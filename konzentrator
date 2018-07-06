@@ -22,12 +22,12 @@ latestbootkernel=$(ls -t /boot/vmlinuz-* | sed "s/\/boot\/vmlinuz-//g" | sort -V
 echo "0 Ubuntu-Release Ubuntu-Release=$release; $release - Kernel $kernel; Boot $latestbootkernel"
 
 
+## apt-check moved to delayed check (600 seconds), needs 2 steps deployment
 if [ ! -d "/usr/lib/check_mk_agent/local/600" ]; then
   mkdir /usr/lib/check_mk_agent/local/600
  fi
 
 if [ ! -f "/usr/lib/check_mk_agent/local/600/konzentrator-services" ]; then
- 
 cat <<EOT >> /usr/lib/check_mk_agent/local/600/konzentrator-services
 #!/bin/bash
 #/usr/lib/check_mk_agent/local
