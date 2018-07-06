@@ -32,7 +32,7 @@ cat <<EOT >> /usr/lib/check_mk_agent/local/600/konzentrator-services
 #!/bin/bash
 #/usr/lib/check_mk_agent/local
 EOT
-chmod +x /usr/lib/check_mk_agent/local/600/konzentror-services
+chmod +x /usr/lib/check_mk_agent/local/600/konzentrator-services
 fi 
 
 ## logins
