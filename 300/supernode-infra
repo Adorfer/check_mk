@@ -58,20 +58,22 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
   testipv6a=2001:4860:4860::8888 # google-dns
   testipv6b=2620:0:ccc::2 # opendns
   testhost=www.google.com
+  pingcount=4
+  pingdelay="0.7"
   br0ipv4=$(ip addr show br0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 
   if [ ! "$SUPERNODE_IPV4_TRANS_ADDR" == "#" ]; then
     konzintv4=$(echo $SUPERNODE_IPV4_TRANS_ADDR|cut -d"." -f1-3).254
-    konzv4=$(ping -c2 -I $SUPERNODE_TRANS_INTERFACE $konzintv4 >/dev/null 2>1;echo $?)
+    konzv4=$(ping -c$pingcount -i $pingdelay -I $SUPERNODE_TRANS_INTERFACE $konzintv4 >/dev/null 2>1;echo $?)
    else
     konzv4="0"
    fi
   if [ ! "$SUPERNODE_IPV6_PREFIX" == "#" ]; then
     konzintv6=$(echo $SUPERNODE_IPV6_PREFIX|cut -d"/" -f1)1
-    konzv6=$(ping6 -c2 -i 0.5 -I $SUPERNODE_TRANS_INTERFACE $konzintv6 >/dev/null 2>1; echo $?)
-    ffrlv6=$(ping6 -c2 -i 0.5 -I $SUPERNODE_TRANS_INTERFACE $testipv6a >/dev/null 2>1; echo $?)
+    konzv6=$(ping6 -c$pingcount -i $pingdelay -I $SUPERNODE_TRANS_INTERFACE $konzintv6 >/dev/null 2>1; echo $?)
+    ffrlv6=$(ping6 -c$pingcount -i $pingdelay -I $SUPERNODE_TRANS_INTERFACE $testipv6a >/dev/null 2>1; echo $?)
     if [ ! "$ffrlv6" == "0" ]; then
-      ffrlv6=$(ping6 -c2 -i 0.5 -I $SUPERNODE_TRANS_INTERFACE $testipv6b >/dev/null 2>1; echo $?)
+      ffrlv6=$(ping6 -c$pingcount -i $pingdelay -I $SUPERNODE_TRANS_INTERFACE $testipv6b >/dev/null 2>1; echo $?)
      fi
    else
     konzv6="0"
