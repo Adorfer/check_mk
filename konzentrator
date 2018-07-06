@@ -23,7 +23,7 @@ echo "0 Ubuntu-Release Ubuntu-Release=$release; $release - Kernel $kernel; Boot 
 
 
 if [ ! -d "/usr/lib/check_mk_agent/local/600" ]; then
-  mkdir /usr/lib/check_mk_agent/local/6000
+  mkdir /usr/lib/check_mk_agent/local/600
  fi
 
 if [ ! -f "/usr/lib/check_mk_agent/local/600/konzentrator-services" ]; then
