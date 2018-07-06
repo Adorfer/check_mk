@@ -26,6 +26,44 @@ kernel=$(uname -r);
 release=$(lsb_release -ds);
 latestbootkernel=$(ls -t /boot/vmlinuz-* | sed "s/\/boot\/vmlinuz-//g" | sort -Vr | head -n1)
 
+## apt-check moved to delayed check (600 seconds), needs 2 steps deployment
+servicesname="supernode-services"
+interval=600
+if [ ! -d "/usr/lib/check_mk_agent/local/$interval" ]; then
+  mkdir /usr/lib/check_mk_agent/local/$interval
+ fi
+
+if [ ! -f "/usr/lib/check_mk_agent/local/$interval/$servicename" ]; then
+cat <<EOT >> /usr/lib/check_mk_agent/local/$interval/$servicename
+#!/bin/bash
+#/usr/lib/check_mk_agent/local
+echo DYSFUNCTIONAL delayed localcheck placeholder, please redeploy
+EOT
+chmod +x /usr/lib/check_mk_agent/local/$interval/$servicename
+fi
+
+## supernode-infrastruktur-testscript renamed (300 seconds), needs 2 steps deployment
+# delete old one
+servicesname="supernode-services"
+interval=300
+if [ ! -f "/usr/lib/check_mk_agent/local/$interval/$servicename" ]; then
+  rm "/usr/lib/check_mk_agent/local/$interval/$servicename"
+ fi
+# create new
+servicesname="supernode-infra"
+if [ ! -d "/usr/lib/check_mk_agent/local/$interval" ]; then
+  mkdir /usr/lib/check_mk_agent/local/$interval
+ fi
+
+if [ ! -f "/usr/lib/check_mk_agent/local/$interval/$servicename" ]; then
+cat <<EOT >> /usr/lib/check_mk_agent/local/$interval/$servicename
+#!/bin/bash
+#/usr/lib/check_mk_agent/local
+echo DYSFUNCTIONAL delayed localcheck placeholder, please redeploy
+EOT
+chmod +x /usr/lib/check_mk_agent/local/$interval/$servicename
+fi
+
 ## ubuntu-Status
 echo "0 Ubuntu-Release Ubuntu-Release=$release; $release - Kernel $kernel; Boot $latestbootkernel"
 
