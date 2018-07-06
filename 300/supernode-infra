@@ -35,7 +35,7 @@ BASE=/opt/eulenfunk/supernode
   totalleases=$(($(ati $dhcpend) - $(ati $dhcpstart)))
 if [ -r /opt/eulenfunk/dhcpleases ] ; then
   activeleases=$(/opt/eulenfunk/dhcpleases|grep "^| Total"|cut -d":" -f2|sed s/\ //)
-  remainingleases=$(($totalleases - $activeleases))
+  remainingleases=$(( $totalleases - $activeleases ))
  fi
   dhtest=1
 if [ -r /opt/eulenfunk/dhtest ] ; then
