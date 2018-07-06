@@ -83,7 +83,9 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
     ffrlv6="0"
    fi
   ffrlv4=$(wget -t$wgettries -T$wgettimeout --bind-address=$br0ipv4 --spider $wgeturl>/dev/null 2>1;echo $?)
-  echo "P ffrl uplinkfail=$konzv6$konzv4$ffrlv6$ffrlv4.0;0:0;0:0 PingErrors KonzV6:$konzv6 KonzV4:$konzv4 PublicV6:$ffrlv6 PublicV4:$ffrlv4"
+  v4wgettime=$((time wget -t$wgettries -T$wgettimeout --bind-address=$br0ipv4 --spider $wgeturl ) 2>&1 | grep real | awk '{print $2}' | sed 's/0m//'| tr -d ".s" | sed -e 's/^0*//')
+  v6wgettime=$((time wget -t$wgettries -T$wgettimeout --bind-address=$br0ipv6 --spider $wgeturl ) 2>&1 | grep real | awk '{print $2}' | sed 's/0m//'| tr -d ".s" | sed -e 's/^0*//')
+  echo "P ffrl uplinkfail=$konzv6$konzv4$ffrlv6$ffrlv4.0;0:0;0:0 wgettimev4=$v4wgettime.0;0:200;0:1100 wgettimev6=$v6wgettime.0;0:200;0:1100 vPingErrors KonzV6:$konzv6 KonzV4:$konzv4 PublicV6:$ffrlv6 PublicV4:$ffrlv4"
 
 ## DNS check
 # dnsmasq running
