@@ -33,7 +33,6 @@ cat <<EOT >> /usr/lib/check_mk_agent/local/600/konzentrator-services
 #/usr/lib/check_mk_agent/local
 EOT
 chmod +x /usr/lib/check_mk_agent/local/600/konzentror-services
-fi 
 
 ## logins
 logincount=$(who|wc -l)
