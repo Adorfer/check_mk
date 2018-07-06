@@ -33,21 +33,21 @@ if [ ! -d "/usr/lib/check_mk_agent/local/$interval" ]; then
   mkdir /usr/lib/check_mk_agent/local/$interval
  fi
 
-if [ ! -f "/usr/lib/check_mk_agent/local/$interval/$servicename" ]; then
-cat <<EOT >> /usr/lib/check_mk_agent/local/$interval/$servicename
+if [ ! -f "/usr/lib/check_mk_agent/local/$interval/$servicesname" ]; then
+cat <<EOT >> /usr/lib/check_mk_agent/local/$interval/$servicesname
 #!/bin/bash
 #/usr/lib/check_mk_agent/local
 echo DYSFUNCTIONAL delayed localcheck placeholder, please redeploy
 EOT
-chmod +x /usr/lib/check_mk_agent/local/$interval/$servicename
+chmod +x /usr/lib/check_mk_agent/local/$interval/$servicesname
 fi
 
 ## supernode-infrastruktur-testscript renamed (300 seconds), needs 2 steps deployment
 # delete old one
 servicesname="supernode-services"
 interval=300
-if [ ! -f "/usr/lib/check_mk_agent/local/$interval/$servicename" ]; then
-  rm "/usr/lib/check_mk_agent/local/$interval/$servicename"
+if [ -f "/usr/lib/check_mk_agent/local/$interval/$servicesname" ]; then
+  rm "/usr/lib/check_mk_agent/local/$interval/$servicesname"
  fi
 # create new
 servicesname="supernode-infra"
@@ -55,13 +55,13 @@ if [ ! -d "/usr/lib/check_mk_agent/local/$interval" ]; then
   mkdir /usr/lib/check_mk_agent/local/$interval
  fi
 
-if [ ! -f "/usr/lib/check_mk_agent/local/$interval/$servicename" ]; then
-cat <<EOT >> /usr/lib/check_mk_agent/local/$interval/$servicename
+if [ ! -f "/usr/lib/check_mk_agent/local/$interval/$servicesname" ]; then
+cat <<EOT >> /usr/lib/check_mk_agent/local/$interval/$servicesname
 #!/bin/bash
 #/usr/lib/check_mk_agent/local
 echo DYSFUNCTIONAL delayed localcheck placeholder, please redeploy
 EOT
-chmod +x /usr/lib/check_mk_agent/local/$interval/$servicename
+chmod +x /usr/lib/check_mk_agent/local/$interval/$servicesname
 fi
 
 ## ubuntu-Status
