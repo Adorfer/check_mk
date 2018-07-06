@@ -1,5 +1,6 @@
 #!/bin/bash
 #/usr/lib/check_mk_agent/local
+
 export LANG=de_DE.UTF-8
 
 function confline # get first line from file $1 mathing $2, stripped of # and ; comment lines, stripped spaces and tabs down to spaces, remove trailing ;
@@ -7,19 +8,10 @@ function confline # get first line from file $1 mathing $2, stripped of # and ; 
  echo $(cat $1|grep -v '^$\|^\s*\#'|sed -e "s/[[:space:]]\+/ /g"|sed s/^\ //|sed s/\;//|grep -i "$2"|head -n 1)
 }
 
-function ati # ipv4 to longint
+function conflines # get lines from file $1 mathing $2, stripped of # and ; comment lines, stripped spaces and tabs down to spaces, remove trailing ;
 {
- ip4=$1; ipno=0
- for (( i=0 ; i<4 ; ++i )); do
-   ((ipno+=${ip4%%.*}*$((254**$((3-${i})))))) # .0 .255 should not be counted
-   ip4=${ip4#*.}
-  done
- echo $ipno
+ echo "$(cat $1|grep -v '^$\|^\s*\#'|sed -e "s/[[:space:]]\+/ /g"|sed s/^\ //|sed s/\;//|grep -i $2)"
 }
-
-BASE=/opt/eulenfunk/supernode
-. ${BASE}/supernode.vars
-. ${BASE}/supernode.config
 
 ## ubuntu patch status
 osversion=$(lsb_release -a 2>/dev/null|grep Description|cut -d: -f2|xargs)
@@ -48,6 +40,5 @@ if [ -f /var/run/reboot-required ]; then
 if [ "$kernel" != "$latestbootkernel" ]; then
   reboot=1
  fi
-echo "P Ubuntu-Patchstatus SecurityUpdates-waiting=$supdates.0;0:0.9;0:5|RegularUpdates-waiting=$nupdates.0;0:30;0:50|Reboot-waiting=$reboot.0;0:0.9;0:1"
-
+echo "P Ubuntu-Patchstatus SecurityUpdates-waiting=$supdates.0;0:0.9;0:2|RegularUpdates-waiting=$nupdates.0;0:25;0:40|Reboot-waiting=$reboot.0;0:0.9;0:1"
 
