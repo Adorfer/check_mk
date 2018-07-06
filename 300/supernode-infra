@@ -60,6 +60,9 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
   testhost=www.google.com
   pingcount=4
   pingdelay="0.7"
+  wgettimeout=3
+  wgettries=2
+  wgeturl="http://www.google.de"
   br0ipv4=$(ip addr show br0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
 
   if [ ! "$SUPERNODE_IPV4_TRANS_ADDR" == "#" ]; then
@@ -79,7 +82,7 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
     konzv6="0"
     ffrlv6="0"
    fi
-  ffrlv4=$(wget -t1 -T1 --bind-address=$br0ipv4 --spider http://www.google.de>/dev/null 2>1;echo $?)
+  ffrlv4=$(wget -t$wgettries -T$wgettimeout --bind-address=$br0ipv4 --spider $wgeturl>/dev/null 2>1;echo $?)
   echo "P ffrl uplinkfail=$konzv6$konzv4$ffrlv6$ffrlv4.0;0:0;0:0 PingErrors KonzV6:$konzv6 KonzV4:$konzv4 PublicV6:$ffrlv6 PublicV4:$ffrlv4"
 
 ## DNS check
