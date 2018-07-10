@@ -65,7 +65,7 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
   wgeturl="http://www.google.de"
   ffrlv6block="2a03"
   br0ipv4=$(ip addr show br0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
-  br0ipv6=$(ip addr show br0 | grep "inet6\b" | awk '{print $2}' | cut -d/ -f1|grep $ffrlv6block)
+  br0ipv6=$(ip addr show br0 | grep "inet6\b" | awk '{print $2}' | cut -d/ -f1|grep $ffrlv6block|tail -n1)
   if [ ! "$SUPERNODE_IPV4_TRANS_ADDR" == "#" ]; then
     konzintv4=$(echo $SUPERNODE_IPV4_TRANS_ADDR|cut -d"." -f1-3).254
     konzv4=$(ping -c$pingcount -i $pingdelay -I $SUPERNODE_TRANS_INTERFACE $konzintv4 >/dev/null 2>1;echo $?)
