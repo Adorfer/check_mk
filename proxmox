@@ -61,7 +61,7 @@ while read line; do
     if [[ $crit != *"."* ]] || [[ $crit != "0.0" ]] ; then
       crit=120
      fi
-    if ( [[ $key != "PECIAgent1" ]] && [[ $key == *AUXTIN* ]] ) ; then
+    if ( [[ $key != "PECIAgent1" ]] && [[ $key != "AUXTIN" ]] ) ; then
       temper="$temper$prefix-$key=$value;0.1:$high;0.1:$crit|"
      fi
    fi
