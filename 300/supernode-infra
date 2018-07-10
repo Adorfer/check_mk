@@ -63,8 +63,9 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
   wgettimeout=3
   wgettries=2
   wgeturl="http://www.google.de"
+  ffrlv6block="2a03"
   br0ipv4=$(ip addr show br0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
-
+  br0ipv6=$(ip addr show br0 | grep "inet6\b" | awk '{print $2}' | cut -d/ -f1|grep $ffrlv6block)
   if [ ! "$SUPERNODE_IPV4_TRANS_ADDR" == "#" ]; then
     konzintv4=$(echo $SUPERNODE_IPV4_TRANS_ADDR|cut -d"." -f1-3).254
     konzv4=$(ping -c$pingcount -i $pingdelay -I $SUPERNODE_TRANS_INTERFACE $konzintv4 >/dev/null 2>1;echo $?)
@@ -74,9 +75,9 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
   if [ ! "$SUPERNODE_IPV6_PREFIX" == "#" ]; then
     konzintv6=$(echo $SUPERNODE_IPV6_PREFIX|cut -d"/" -f1)1
     konzv6=$(ping6 -c$pingcount -i $pingdelay -I $SUPERNODE_TRANS_INTERFACE $konzintv6 >/dev/null 2>1; echo $?)
-    ffrlv6=$(ping6 -c$pingcount -i $pingdelay -I $SUPERNODE_TRANS_INTERFACE $testipv6a >/dev/null 2>1; echo $?)
+    ffrlv6=$(ping6 -c$pingcount -i $pingdelay -I $br0ipv6 $testipv6a >/dev/null 2>1; echo $?)
     if [ ! "$ffrlv6" == "0" ]; then
-      ffrlv6=$(ping6 -c$pingcount -i $pingdelay -I $SUPERNODE_TRANS_INTERFACE $testipv6b >/dev/null 2>1; echo $?)
+      ffrlv6=$(ping6 -c$pingcount -i $pingdelay -I $br0ipv6 $testipv6b >/dev/null 2>1; echo $?)
      fi
    else
     konzv6="0"
