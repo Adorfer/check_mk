@@ -59,7 +59,7 @@ if [ -r /opt/eulenfunk/dhtest ] ; then
   testipv6b=2620:0:ccc::2 # opendns
   testhost=www.google.com
   pingcount=4
-  pingcountk=4
+  pingcountk=1 # konzentrator nur ein ping (wenn das schiefgeht, dann stimmt was mit den Arptabellen nicht)
   pingdelay="0.7"
   wgettimeout=3
   wgettries=2
