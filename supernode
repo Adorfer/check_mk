@@ -76,7 +76,7 @@ if [ "$bat_adv_v" == "$bat_ctl_v" ] ; then
   batadvequal=1
  fi
 
-echo "P Batman-Version kernelvsctl=$batadvequal;1:1;0:2 versions:$bat_version"
+echo "P Batman-Version kernelvsctl=$batadvequal;1:2;0:3 versions:$bat_version"
 #list=$(ls -F /sys/kernel/debug/batman_adv|grep /)
 list=$(ip link|grep ",UP,"|cut -d" " -f2|tr -d ":")
 if [[ $list != *"bat0"* ]]; then
@@ -139,3 +139,4 @@ while read line; do
  done<$TFILE
 rm $TFILE
 echo "$logout"
+

@@ -72,8 +72,8 @@ while read -r line; do
  done <<< "$tunnel"
 wlow=$(( $tunnelzahl ))
 clow=$(( $tunnelzahl * 10 / 20 + 1 ))
-wlimit=$(( $tunnelzahl ))
-climit=$(( $tunnelzahl ))
+wlimit=$(( $tunnelzahl +1 ))
+climit=$(( $tunnelzahl +1 ))
 echo "P Tunlinks Tunnel-Up=$tunnelup.0;$wlow:$wlimit;$clow:$climit|Tunnel-Configured=$tunnelzahl.0 Tunnel-Configured:$tunnelzahl Tunnel-Up:$tunnelup"
 
 ## Bird4
@@ -86,8 +86,8 @@ bird4imported=0
 bird4exported=0
 wlow=$(( $bird4confzahl ))
 clow=$(( $bird4confzahl * 10 / 20 + 1 ))
-wlimit=$(( $bird4confzahl ))
-climit=$(( $bird4confzahl ))
+wlimit=$(( $bird4confzahl + 1 ))
+climit=$(( $bird4confzahl + 1 ))
 TFILE="/tmp/$(basename $0).$$.tmp"
 birdc s p>$TFILE
 while read line; do
@@ -124,7 +124,7 @@ while read line; do
      ExportUp=$(confline $TFILE2 "Export withdraws:")
      ExpUpWit=$(echo $routes|cut -d" " -f6)
      rm $TFILE2
-    echo "P bird4l-$remote Bird4-$remote=$linkok.0;0.1:1;0:1 linkstate:$linkstate since:$since preference:$preference preferred:$preferred imported:$imported exported:$exported ImpUpAcp:$ImpUpAcp ImpUpWit:$ImpUpWit ExpUpAcp:$ExpUpAcp ExUpWit:$ExpUpWit"
+    echo "P bird4l-$remote Bird4-$remote=$linkok.0;0.1:2;0:2 linkstate:$linkstate since:$since preference:$preference preferred:$preferred imported:$imported exported:$exported ImpUpAcp:$ImpUpAcp ImpUpWit:$ImpUpWit ExpUpAcp:$ExpUpAcp ExUpWit:$ExpUpWit"
    fi
  done<$TFILE
 rm $TFILE
@@ -140,8 +140,8 @@ bird6imported=0
 bird6exported=0
 wlow=$(( $bird6confzahl ))
 clow=$(( $bird6confzahl * 10 / 20 + 1 ))
-wlimit=$(( $bird6confzahl ))
-climit=$(( $bird6confzahl ))
+wlimit=$(( $bird6confzahl +1 ))
+climit=$(( $bird6confzahl +1 ))
 TFILE="/tmp/$(basename $0).$$.tmp"
 birdc6 s p>$TFILE
 while read line; do
@@ -178,7 +178,7 @@ while read line; do
      ExportUp=$(confline $TFILE2 "Export withdraws:")
      ExpUpWit=$(echo $routes|cut -d" " -f6)
      rm $TFILE2
-    echo "P bird6l-$remote Bird6-$remote=$linkok.0;0.1:1;0:1 linkstate:$linkstate since:$since preference:$preference preferred:$preferred imported:$imported exported:$exported ImpUpAcp:$ImpUpAcp ImpUpWit:$ImpUpWit ExpUpAcp:$ExpUpAcp ExUpWit:$ExpUpWit"
+    echo "P bird6l-$remote Bird6-$remote=$linkok.0;0.1:2;0:2 linkstate:$linkstate since:$since preference:$preference preferred:$preferred imported:$imported exported:$exported ImpUpAcp:$ImpUpAcp ImpUpWit:$ImpUpWit ExpUpAcp:$ExpUpAcp ExUpWit:$ExpUpWit"
    fi
  done<$TFILE
 rm $TFILE

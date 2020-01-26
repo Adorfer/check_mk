@@ -40,5 +40,5 @@ if [ -f /var/run/reboot-required ]; then
 if [ "$kernel" != "$latestbootkernel" ]; then
   reboot=1
  fi
-echo "P Ubuntu-Patchstatus SecurityUpdates-waiting=$supdates.0;0:1;0:5|RegularUpdates-waiting=$nupdates.0;0:30;0:50|Reboot-waiting=$reboot.0;0:1;0:2"
+echo "P Ubuntu-Patchstatus SecurityUpdates-waiting=$supdates.0;0:0.9;0:5|RegularUpdates-waiting=$nupdates.0;0:30;0:50|Reboot-waiting=$reboot.0;0:0.9;0:1"
 

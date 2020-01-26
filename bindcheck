@@ -17,4 +17,4 @@ export LANG=de_DE.UTF-8
     dns4via4=0; dns6via4=0; dns4via6=0; dns6via6=0;
    fi
   dnsstatus=$bindrunning$dns4via4$dns6via6$dns4via6$dns6via4
-  echo "P Dns dnsstatus=$dnsstatus.0;11111:11111;11111:11111 bindrunning=$bindrunning dns4via4=$dns4via4 dns6via6=$dns6via6 dns4via6=$dns4via6 dns6via4=$dns6via4";
+  echo "P Dns dnsstatus=$dnsstatus.0;11110:11112;11110:11112 bindrunning=$bindrunning dns4via4=$dns4via4 dns6via6=$dns6via6 dns4via6=$dns4via6 dns6via4=$dns6via4";
