@@ -33,7 +33,7 @@ cat <<EOT >> /usr/lib/check_mk_agent/local/600/konzentrator-services
 #/usr/lib/check_mk_agent/local
 EOT
 chmod +x /usr/lib/check_mk_agent/local/600/konzentrator-services
-fi 
+fi
 
 ## logins
 logincount=$(who|wc -l)
@@ -70,8 +70,8 @@ while read -r line; do
   mtu=$(ip link|grep $remote|cut -d" " -f5)
   echo "P tunl_$remote link-$remote=$state.0;0:2;0:2; link-$remote:$tunnelst mtu:$mtu"
  done <<< "$tunnel"
-wlow=$(( $tunnelzahl ))
-clow=$(( $tunnelzahl * 10 / 20 + 1 ))
+wlow=$(( $tunnelzahl -1 ))
+clow=$(( $tunnelzahl -2 ))
 wlimit=$(( $tunnelzahl +1 ))
 climit=$(( $tunnelzahl +1 ))
 echo "P Tunlinks Tunnel-Up=$tunnelup.0;$wlow:$wlimit;$clow:$climit|Tunnel-Configured=$tunnelzahl.0 Tunnel-Configured:$tunnelzahl Tunnel-Up:$tunnelup"
@@ -80,6 +80,7 @@ echo "P Tunlinks Tunnel-Up=$tunnelup.0;$wlow:$wlimit;$clow:$climit|Tunnel-Config
 bird4conf=/etc/bird/bird.conf
 bird4=$(conflines $bird4conf protocol|grep -i " bgp")
 bird4confzahl=$(echo "$bird4"|wc -l)
+bird4confzahlu=$(( bird4confzahl +1 ))
 bird4loaded=0
 bird4up=0
 bird4imported=0
@@ -128,12 +129,13 @@ while read line; do
    fi
  done<$TFILE
 rm $TFILE
-echo "P Bird4links bird4-Up=$bird4up.0;$wlow:$wlimit;$clow:$climit|Bird4-Configured=$bird4confzahl.0|Bird4-Loaded=$bird4loaded.0;$bird4confzahl:$bird4confzahl;$bird4confzahl:$bird4confzahl|Bird4Imported=$bird4imported.0|Bird4Exported=$bird4exported.0 Up:$bird4up Configured:$bird4confzahl Loaded:$bird4loaded Imported:$bird4imported Exported:$bird4exported"
+echo "P Bird4links bird4-Up=$bird4up.0;$wlow:$wlimit;$clow:$climit|Bird4-Configured=$bird4confzahl.0|Bird4-Loaded=$bird4loaded.0;$bird4confzahl:$bird4confzahlu;$bird4confzahl:$bird4confzahlu|Bird4Imported=$bird4imported.0|Bird4Exported=$bird4exported.0 Up:$bird4up Configured:$bird4confzahl Loaded:$bird4loaded Imported:$bird4imported Exported:$bird4exported"
 
 ## Bird6
 bird6conf=/etc/bird/bird6.conf
 bird6=$(conflines $bird6conf protocol|grep -i " bgp")
 bird6confzahl=$(echo "$bird6"|wc -l)
+bird6confzahlu=$(( bird6confzahl +1 ))
 bird6loaded=0
 bird6up=0
 bird6imported=0
@@ -182,7 +184,7 @@ while read line; do
    fi
  done<$TFILE
 rm $TFILE
-echo "P Bird6links bird6-Up=$bird6up.0;$wlow:$wlimit;$clow:$climit|Bird6-Configured=$bird6confzahl.0|Bird6-Loaded=$bird6loaded.0;$bird6confzahl:$bird6confzahl;$bird6confzahl:$bird6confzahl|Bird6Imported=$bird6imported.0|Bird6Exported=$bird6exported.0 Up:$bird6up Configured:$bird6confzahl Loaded:$bird6loaded Imported:$bird6imported Exported:$bird6exported"
+echo "P Bird6links bird6-Up=$bird6up.0;$wlow:$wlimit;$clow:$climit|Bird6-Configured=$bird6confzahl.0|Bird6-Loaded=$bird6loaded.0;$bird6confzahl:$bird6confzahlu;$bird6confzahl:$bird6confzahlu|Bird6Imported=$bird6imported.0|Bird6Exported=$bird6exported.0 Up:$bird6up Configured:$bird6confzahl Loaded:$bird6loaded Imported:$bird6imported Exported:$bird6exported"
 
 
 ## Conntrack
@@ -196,3 +198,4 @@ climit=$(echo $conntrack_limit *0.9|bc)
 wrlimit=$(echo $conntrack_limit *0.3|bc)
 crlimit=$(echo $conntrack_limit *0.1|bc)
 echo "P Conntrack conntrack=$conntrack.0;$wlow:$wlimit;$clow:$climit|conntrack_remain=$conntrack_remain.0;$wrlimit:$conntrack_limit;$crlimit:$conntrack_limit Conntrack:$conntrack Conntrack-Remain:$conntrack_remain Conntrack-Limit:$conntrack_limit"
+
