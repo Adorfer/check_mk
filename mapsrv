@@ -55,10 +55,10 @@ while read line; do
 rm $TFILE
 echo "$logout"
 
-## Batman-Advanced 
+## Batman-Advanced
 bat_version=$(batctl -v)
-bat_adv_v=$(batctl -v|cut -d" " -f4|tr -d "]")
-bat_ctl_v=$(batctl -v|cut -d" " -f2)
+bat_adv_v=$(batctl -v 2>/dev/null|cut -d" " -f4|tr -d "]")
+bat_ctl_v=$(batctl -v 2>/dev/null|cut -d" " -f2)
 batadvequal=2
 if [ "$bat_adv_v" == "$bat_ctl_v" ] ; then
   batadvequal=1
@@ -78,12 +78,13 @@ for b in $list; do
     sitename=$(echo $b|cut -b5-)
     checkbat=$(conflines /opt/eulenfunk/map/sites instance|grep "\ $sitename")
     checkgw=$(echo $checkbat|cut -d" " -f 8)
+    checkgwh=$(( $checkgw +1 ))
     checkrouter=$(echo $checkbat|cut -d" " -f 9)
     checkclients=$(echo $checkbat|cut -d" " -f 10)
-    router=$(($(batctl -m $b o|grep "^\ \*"|wc -l)-0 ))
-    clients=$(batctl -m $b tg| grep "^\ \*"|grep -cEo "\[.*W.*\]+")
-    owngw=$(batctl -m $b gw|cut -d" " -f1|sed s/server/1/|sed s/off/0/)
-    gateways=$(($(batctl -m $b gwl|grep -A 999 outgoingIf|grep -v outgoingIf|wc -l ) + $owngw))
+    router=$(($(batctl -m $b o 2>/dev/null|grep "^\ \*"|wc -l)-0 ))
+    clients=$(batctl -m $b tg 2>/dev/null| grep "^\ \*"|grep -cEo "\[.*W.*\]+")
+    owngw=$(batctl -m $b gw 2>/dev/null|cut -d" " -f1|sed s/server/1/|sed s/off/0/)
+    gateways=$(($(batctl -m $b gwl 2>/dev/null|grep -A 999 outgoingIf|grep -v outgoingIf|wc -l ) + $owngw))
     clientwarnlow=$(( $checkclients * 2 / 100 ))
     clientcritlow=$(( $checkclients * 1 / 100 ))
     clientwarnhigh=$(( $checkclients * 80 / 100 ))
@@ -105,9 +106,9 @@ for b in $list; do
        fi
       rm -f "$clientmac"
       popd >/dev/null
-      echo "P Batman-$b Router=$router.0;$routerwarnlow.0:$routerwarnhigh.0;$routercritlow.0:$routercrithigh.0|Clients=$clients.0;$clientwarnlow.0:$clientwarnhigh.0;$clientcritlow.0:$clientcrithigh.0|Gateways=$gateways.0;$checkgw.0:$checkgw.0;$checkgw.0:$checkgw.0;|dhtest=$dhtest.0;1:2;1:2 dhtestip=$dhtestip";
+      echo "P Batman-$b Router=$router.0;$routerwarnlow.0:$routerwarnhigh.0;$routercritlow.0:$routercrithigh.0|Clients=$clients.0;$clientwarnlow.0:$clientwarnhigh.0;$clientcritlow.0:$clientcrithigh.0|Gateways=$gateways.0;$checkgw.0:$checkgwh.0;$checkgw.0:$checkgwh.0;|dhtest=$dhtest.0;0:2;0:2 dhtestip=$dhtestip";
      else
-      echo "P Batman-$b Router=$router.0;$routerwarnlow.0:$routerwarnhigh.0;$routercritlow.0:$routercrithigh.0|Clients=$clients.0;$clientwarnlow.0:$clientwarnhigh.0;$clientcritlow.0:$clientcrithigh.0|Gateways=$gateways.0;$checkgw.0:$checkgw.0;$checkgw.0:$checkgw.0";
+      echo "P Batman-$b Router=$router.0;$routerwarnlow.0:$routerwarnhigh.0;$routercritlow.0:$routercrithigh.0|Clients=$clients.0;$clientwarnlow.0:$clientwarnhigh.0;$clientcritlow.0:$clientcrithigh.0|Gateways=$gateways.0;$checkgw.0:$checkgwh.0;$checkgw.0:$checkgwh.0";
      fi
    fi;
 done
@@ -122,4 +123,3 @@ echo "P L2TP Clients=$l_tunnel.0;1:30;0:80|Tunneldiggerbridges=$tunneldigger.0;0
 
 # call the other one..
 /opt/eulenfunk/map/check.sh
-
