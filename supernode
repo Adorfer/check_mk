@@ -68,9 +68,9 @@ fi
 echo "0 Ubuntu-Release Ubuntu-Release=$release; $release - Kernel $kernel; Boot $latestbootkernel"
 
 ## Batman-Advanced 
-bat_version=$(batctl -v)
-bat_adv_v=$(batctl -v|cut -d" " -f4|tr -d "]")
-bat_ctl_v=$(batctl -v|cut -d" " -f2)
+bat_version=$(batctl -v 2>/dev/null)
+bat_adv_v=$(batctl -v 2>/dev/null|cut -d" " -f4|tr -d "]")
+bat_ctl_v=$(batctl -v 2>/dev/null|cut -d" " -f2)
 batadvequal=2
 if [ "$bat_adv_v" == "$bat_ctl_v" ] ; then
   batadvequal=1
@@ -83,14 +83,14 @@ if [[ $list != *"bat0"* ]]; then
   list="$list bat0"
  fi
 for b in $list; do
-  z=$( batctl -m $b o 2> /dev/null | wc -l )
+  z=$( batctl -m $b o 2>/dev/null | wc -l )
   if [ $z -ge 1 ]; then
-    router=$(($(batctl -m $b o|grep "^\ \*"|wc -l)-0 ))
-    clients=$(batctl -m $b tg| grep "^\ \*"|grep -cEo "\[.*W.*\]+")
-    owngw=$(batctl -m $b gw|cut -d" " -f1|sed s/server/1/|sed s/off/0/)
-    gateways=$(($(batctl -m $b gwl|grep -A 999 outgoingIf|grep -v outgoingIf|wc -l ) + $owngw))
-    claims=$(batctl -m $b cl|wc -l )
-#    ips=$(( $(batctl -m $b dc 2> /dev/null |wc -l) - 2))
+    router=$(($(batctl -m $b o 2>/dev/null|grep "^\ \*"|wc -l)-0 ))
+    clients=$(batctl -m $b tg 2>/dev/null| grep "^\ \*"|grep -cEo "\[.*W.*\]+")
+    owngw=$(batctl -m $b gw 2>/dev/null|cut -d" " -f1|sed s/server/1/|sed s/off/0/)
+    gateways=$(($(batctl -m $b gwl 2>/dev/null|grep -A 999 outgoingIf|grep -v outgoingIf|wc -l ) + $owngw))
+    claims=$(batctl -m $b cl 2>/dev/null|wc -l )
+#    ips=$(( $(batctl -m $b dc 2>/dev/null |wc -l) - 2))
     wlow=$(( $router * 20 / 100 ))
     clow=$(( $router * 5 / 100 ))
     wlimit=$(( $router * 5 ))
