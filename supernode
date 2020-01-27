@@ -120,7 +120,7 @@ for fasti in $list ; do
 ## radvd check (warum auch immer da 2 Prozesse laufen, es scheint so sein zu müssen)
   radvdrunning=$(ps ax |grep radvd.pid|grep -v grep|wc -l)
   radvdstatus=$(echo $(ps ax |grep radvd.pid|grep -v grep|cut -c16)|tr -d "/n"|tr -d " ")
-  echo "P radvd radvdprocs=$radvdrunning.0;2:2;2:2 radvdstatus=$radvdstatus";
+  echo "P radvd radvdprocs=$radvdrunning.0;2:3;2:3 radvdstatus=$radvdstatus";
 
 ## Logins
 logincount=$(who|wc -l)
