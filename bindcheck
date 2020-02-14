@@ -3,12 +3,12 @@
 export LANG=de_DE.UTF-8
 
 ## DNS check
-  if=ens3
+  defaultif=$(/sbin/ip -f inet route | awk '/default/ { print $5 }')
   testhost=fileserver.ffnef.de
   bindrunning=$(ps ax |grep named|grep bind|wc -l)
   if [ "$bindrunning" == "1" ]; then
-    ipv4=$(ip -4 a s $if|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
-    ipv6=$(ip -6 a s $if|grep inet|grep -v "deprecated"|cut -d" " -f6|cut -d"/" -f1|head -1)
+    ipv4=$(ip -4 a s $defaultif|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
+    ipv6=$(ip -6 a s $defaultif|grep inet|grep -v "deprecated"|cut -d" " -f6|cut -d"/" -f1|head -1)
     dns4via4=$(dig @$ipv4 A $testhost +time=1|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
     dns6via4=$(dig @$ipv4 AAAA $testhost +time=1|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
     dns4via6=$(dig @$ipv6 A $testhost +time=1|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
