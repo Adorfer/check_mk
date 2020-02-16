@@ -4,7 +4,7 @@ export LANG=de_DE.UTF-8
 
 ## DNS check
   defaultif=$(/sbin/ip -f inet route | awk '/default/ { print $5 }'|head -1)
-  testhost=mail.nabal.de
+  testhost=ffnef.de
   mariadb_cstat=$(docker ps -a|cut -c87-200|grep mariadb|cut -c 20-80| awk '{ print $1 }'|head -1)
   pdns_cstat=$(docker ps -a|cut -c87-200|grep -e pdns-slave -e pdns-master|cut -c 20-80| awk '{ print $1 }'|head -1)
   pastatic_cstat=$(docker ps -a|cut -c87-200|grep pdns-admin-static|cut -c 20-80| awk '{ print $1 }'|head -1)
@@ -24,5 +24,7 @@ export LANG=de_DE.UTF-8
    else
     dns4via4=0; dns6via4=0; dns4via6=0; dns6via6=0;
    fi
-  dnsstatus=$mariadb_ok$pdns_ok$pastatic_ok$pauwsgi_ok$dns4via4$dns6via6$dns4via6$dns6via4
-  echo "P pwdns dnsstatus=$dnsstatus.0;11111110:11111112;11111110:11111112 pwdns_cont=$pdns_cstat mariadb_cont=$mariadb_cstat pdastatic_cont=$pastatic_cstat pdauwsgi_cont=$pauwsgi_cstat dns4via4=$dns4via4 dns6via6=$dns6via6 dns4via6=$dns4via6 dns6via4=$dns6via4";
+  dockerstatus=$mariadb_ok$pdns_ok$pastatic_ok$pauwsgi_ok
+  dnsstatus=$dns4via4$dns6via6$dns4via6$dns6via4
+  echo "P pwdns dnsstatus=$dnsstatus.0;1110:1112;1110:1112 dns4via4=$dns4via4 dns6via6=$dns6via6 dns4via6=$dns4via6 dns6via4=$dns6via4";
+  echo "P docker dockerstatus=$dockerstatus.0;1110:1112;1110:1112 pwdns_cont=$pdns_cstat mariadb_cont=$mariadb_cstat pdastatic_cont=$pastatic_cstat pdauwsgi_cont=$pauwsgi_cstat";
