@@ -1,0 +1,28 @@
+#!/bin/bash
+#/usr/lib/check_mk_agent/local
+export LANG=de_DE.UTF-8
+
+## DNS check
+  defaultif=$(/sbin/ip -f inet route | awk '/default/ { print $5 }'|head -1)
+  testhost=mail.nabal.de
+  mariadb_cstat=$(docker ps -a|cut -c87-200|grep mariadb|cut -c 20-80| awk '{ print $1 }'|head -1)
+  pdns_cstat=$(docker ps -a|cut -c87-200|grep -e pdns-slave -e pdns-master|cut -c 20-80| awk '{ print $1 }'|head -1)
+  pastatic_cstat=$(docker ps -a|cut -c87-200|grep pdns-admin-static|cut -c 20-80| awk '{ print $1 }'|head -1)
+  pauwsgi_cstat=$(docker ps -a|cut -c87-200|grep pdns-admin-uwsgi|cut -c 20-80| awk '{ print $1 }'|head -1)
+  if [ "$mariadb_cstat" == "Up" ] ; then mariadb_ok=1; else mariadb_ok=0;fi
+  if [ "$pdns_cstat" == "Up" ] ; then pdns_ok=1; else pdns_ok=0;fi
+  if [ "$pastatic_cstat" == "Up" ] ; then pastatic_ok=1; else pastatic_ok=0;fi
+  if [ "$pauwsgi_cstat" == "Up" ] ; then pauwsgi_ok=1; else pauwsgi_ok=0;fi
+
+  if [ "$pdns_ok" == "1" ]; then
+    ipv4=$(ip -4 a s $defaultif|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
+    ipv6=$(ip -6 a s $defaultif|grep inet|grep -v "deprecated"|cut -d" " -f6|cut -d"/" -f1|head -1)
+    dns4via4=$(dig @$ipv4 A $testhost +time=1|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
+    dns6via4=$(dig @$ipv4 AAAA $testhost +time=1|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
+    dns4via6=$(dig @$ipv6 A $testhost +time=1|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
+    dns6via6=$(dig @$ipv6 AAAA $testhost +time=1|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
+   else
+    dns4via4=0; dns6via4=0; dns4via6=0; dns6via6=0;
+   fi
+  dnsstatus=$mariadb_ok$pdns_ok$pastatic_ok$pauwsgi_ok$dns4via4$dns6via6$dns4via6$dns6via4
+  echo "P pwdns dnsstatus=$dnsstatus.0;11111110:11111112;11111110:11111112 pwdns_cont=$pdns_cstat mariadb_cont=$mariadb_cstat pdastatic_cont=$pastatic_cstat pdauwsgi_cont=$pauwsgi_cstat dns4via4=$dns4via4 dns6via6=$dns6via6 dns4via6=$dns4via6 dns6via4=$dns6via4";
