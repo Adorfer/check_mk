@@ -3,7 +3,7 @@
 export LANG=de_DE.UTF-8
 
 ## DNS check
-  defaultif=$(/sbin/ip -f inet route | awk '/default/ { print $5 }')
+  defaultif=$(/sbin/ip -f inet route | awk '/default/ { print $5 }'|head -1)
   testhost=fileserver.ffnef.de
   bindrunning=$(ps ax |grep named|grep bind|wc -l)
   if [ "$bindrunning" == "1" ]; then
