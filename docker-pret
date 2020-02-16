@@ -1,0 +1,19 @@
+#!/bin/bash
+#/usr/lib/check_mk_agent/local
+export LANG=de_DE.UTF-8
+
+  defaultif=$(/sbin/ip -f inet route | awk '/default/ { print $5 }'|head -1)
+  testhost=ffnef.de
+  pretix_cstat=$(docker ps -a|cut -c90-200|grep pretix.service|awk '{ print $1 }'|head -1)
+  pretalxmain_cstat=$(docker ps -a|cut -c90-200|grep -e pretalx|egrep -v "pretalx-db|pretalx-redis"|awk '{ print $1 }'|head -1)
+  pretalxdb_cstat=$(docker ps -a|cut -c90-200|grep pretalx-db|awk '{ print $1 }'|head -1)
+  pretalxredis_cstat=$(docker ps -a|cut -c90-200|grep pretalx-redis|awk '{ print $1 }'|head -1)
+  if [ "$pretix_cstat" == "Up" ] ; then pretix_ok=1; else pretix_ok=0;fi
+  if [ "$pretalxmain_cstat" == "Up" ] ; then pretalxmain_ok=1; else pretalxmain_ok=0;fi
+  if [ "$pretalxdb_cstat" == "Up" ] ; then pretalxdb_ok=1; else pretalxdb_ok=0;fi
+  if [ "$pretalxredis_cstat" == "Up" ] ; then pretalxredis_ok=1; else pretalxredis_ok=0;fi
+
+  dockerstatus=$pretix_ok$pretalxmain_ok$pretalxdb_ok$pretalxredis_ok
+  echo "P docker dockerstatus=$dockerstatus.0;1110:1112;1110:1112 pretix_cont=$pretix_cstat pretalxmain_cont=$pretalxmain_cstat pretalxdb_cont=$pretalxdb_cstat pretalxredis_cont=$pretalxredis_cstat";
+
+
