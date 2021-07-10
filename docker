@@ -1,0 +1,14 @@
+#!/bin/bash
+#/usr/lib/check_mk_agent/local
+
+export LANG=de_DE.UTF-8
+
+function dockerstatus {
+  echo $(docker ps -a --format '{{json .}}' |grep ${1}|jq .Status --raw-output)
+}
+
+mariadb_cstat="$(dockerstatus 'mariadb')"
+if [[ "$mariadb_cstat" == "Up"* ]] ; then mariadb_ok=1; else mariadb_ok=0;fi
+dockerresult=$mariadb_ok
+echo "P docker dockerstatus=$dockerresult.0;0:2;0:2 mariadb_cont=$mariadb_cstat
+ 
