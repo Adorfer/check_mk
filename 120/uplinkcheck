@@ -1,0 +1,31 @@
+#!/bin/bash
+#/usr/lib/check_mk_agent/local
+export LANG=de_DE.UTF-8
+
+## Internet Uplinkcheck
+testipv4a="8.8.8.8" # google-dns
+testipv4b="1.1.1.1" # cloudflare
+testipv6a="2001:4860:4860::8888" # google-dns
+testipv6b="2620:0:ccc::2" # opendns
+testhost="www.google.com"
+pingcount="2"
+pingdelay="1"
+wgettimeout="3"
+wgettries="2"
+wgeturl="http://www.google.de"
+ping4oks=0
+defaultv4iface=$(awk '$2 == 00000000 { print $1 }' /proc/net/route)
+v4gw=$(ip -4 addr show dev "$defaultv4iface" | awk '$1 ~ /^inet/ { sub("/.*", "", $2); print $2 }')
+br0ipv4=$(ip addr show $defaultv4iface | grep "inet\b" | awk '{print $2}' | cut -d/ -f1 |grep -v 127.0.0.1|tail -n1)
+pingv4=$(ping  -c$pingcount -i $pingdelay -I $br0ipv4 $testipv4a >/dev/null 2>&1; echo $?)
+[ ! "$ping4" == "0" ] &&  ping4=$(ping  -c$pingcount -i $pingdelay -I $br0ipv4 $testipv4b >/dev/null 2>&1; echo $?)
+[ "$ping4" == "0" ] && ((ping4oks++))
+((ping4++))
+v4wgettime=$((time wget -t$wgettries -T$wgettimeout --bind-address=$br0ipv4 --spider $wgeturl ) 2>&1 | grep real | awk '{print $2}' | sed 's/0m//'| tr -d ",.s" | sed -e 's/^0*//')
+
+dns4v4oks=0
+ipv4=$(ip -4 addr show $defaultv4iface | grep "inet\b" | awk '{print $2}' | cut -d/ -f1 |grep -v 127.0.0.1|tail -n1)
+dns4via4=$(dig +short  A $testhost +time=2|tail -1|wc -l)
+dns4v4oks=$((dns4v4oks+dns4via4))
+echo "P ipuplink ping4=$ping4oks.0;0:2;0:2|wgettimev4=$v4wgettime.0;0:200;0:1100|dns4via4=$dns4v4oks.0;0:2;0:2"
+
