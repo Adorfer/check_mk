@@ -17,94 +17,109 @@ function ati # ipv4 to longint
  echo $ipno
 }
 
-BASE=/opt/eulenfunk/supernode
-. ${BASE}/supernode.vars
-. ${BASE}/supernode.config
+ffrluplinkblock="2a03:2260"
+ffnwuplinkblock="2a0f:b507"
 
-## isc-dhcpd-server
-# leasescheck
-# needs script https://github.com/eulenfunk/scripts/blob/master/dhcpleases
+## get exspected domains from kea.conf
+keaconf="/etc/kea/kea.conf"
+domain_ids=($(cat $keaconf|jq -r '.Dhcp4.subnet4 |map(.id)'|grep .[0-9]|tr -d ', '))
+domain_v4ranges=($(cat $keaconf|jq -r '.Dhcp4.subnet4 |map(.pools)'|grep pool|cut -d: -f 2|tr -d '" '))
+domain_cliifs=($(cat $keaconf|jq -r '.Dhcp4.subnet4 |map(.interface)'|grep '"'|tr -d '", '))
+domaincount=0
+for domain in "${domain_ids[@]}"; do
+  domaincountz=$domaincount
+# echo "Domain:$domain cli_if:${domain_cliifs[$domaincount]} iprange:${domain_v4ranges[$domaincount]} "
+  ((domaincount++))
+ done
+# echo Total domains configured:$domaincount $domaincountz
+
+## dhcpd-server leasescheck
 # needs dhtest from https://github.com/saravana815/dhtest compiled
-  dhcpconf=/etc/dhcp/dhcpd.conf
-  dhcpinterface=$(confline $dhcpconf "interface "|cut -d" " -f2)
-  dhcprunning=$(ps ax|grep dhcpd.pid|grep dhcpd.conf|wc -l)
-  leasesage=$((($(date +%s) - $(date +%s -r "/var/lib/dhcp/dhcpd.leases")) / 60 ))
-  dhcprange=$(confline $dhcpconf range)
-  dhcpstart=$(echo $dhcprange|cut -d" " -f2)
-  dhcpend=$(echo $dhcprange|cut -d" " -f3)
+for (( domainindex=0; domainindex<=domaincountz; domainindex++ )); do
+  domainid=${domain_ids[$domainindex]}
+  domainidpad=$(printf "%.2d\n" $domainid)
+  activeleases=$(psql kea_leases -U kea -h localhost -c "COPY(SELECT leases FROM lease4_stat WHERE subnet_id=$domainid AND state=0) TO STDOUT CSV;")
+  [ -z $activeleases ] && activeleases=0
+  dhcprange=${domain_v4ranges[$domainindex]}
+  dhcpstart=$(echo $dhcprange|cut -d"-" -f1)
+  dhcpend=$(echo $dhcprange|cut -d"-" -f2)
   totalleases=$(($(ati $dhcpend) - $(ati $dhcpstart)))
-if [ -r /opt/eulenfunk/dhcpleases ] ; then
-  activeleases=$(/opt/eulenfunk/dhcpleases|grep "^| Total"|cut -d":" -f2|sed s/\ //)
   remainingleases=$(( $totalleases - $activeleases ))
- fi
-  dhtest=1
-if [ -r /opt/eulenfunk/dhtest ] ; then
-  pushd /tmp >/dev/null
-  clientmac=ca:b1:e9:fa:b1:77
-  dhtestack=$(/opt/eulenfunk/dhtest -i $dhcpinterface -m $clientmac -h check_mk -T 7|grep "DHCP ack received")
-  if [ -n "$dhtestack" ] ; then
-    dhtest=$(echo $dhtestack|wc -l)
-    dhtestip=$(echo $dhtestack|cut -d":" -f2)
-   fi
-  rm -f "$clientmac"
-  popd >/dev/null
- fi
-  dhcpstatus=$leasesage$dhcprunning$dhtest
   actwarn=$(($totalleases * 75 / 100))
   actcrit=$(($totalleases * 90 / 100))
-  echo "P Dhcp-Leases serverstatus=$dhcpstatus.0;11:3011;11:12011|active-leases=$activeleases.0;5:$actwarn;1:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases dhcpdrunning=$dhcprunning leasesage=$leasesage dhtest=$dhtest $dhtestack";
+  dhtest=1
+  if [ ! -z $(command -v dhtest) ] ; then
+    pushd /tmp >/dev/null
+    clientmac=ca:b1:e9:fa:b1:77
+    dhtestack=$(dhtest -i ${domain_cliifs[$domainindex]} -m $clientmac -h check_mk -T 7|grep "DHCP ack received")
+    dhtest=0
+    if [ -n "$dhtestack" ] ; then
+      dhtest=$(echo $dhtestack|wc -l)
+      dhtestip=$(echo $dhtestack|cut -d":" -f2)
+     fi
+    rm -f "$clientmac"
+    popd >/dev/null
+   fi
+   echo "P dhcp4_d$domainidpad dhtest=$dhtest.0;0:2;0:2|active-leases=$activeleases.0;5:$actwarn;1:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases $dhtestack";
+ done
 
 ## FFRL Uplinkcheck
-  testipv6a=2001:4860:4860::8888 # google-dns
-  testipv6b=2620:0:ccc::2 # opendns
-  testhost=www.google.com
-  pingcount=4
-  pingcountk=1 # konzentrator nur ein ping (wenn das schiefgeht, dann stimmt was mit den Arptabellen nicht)
-  pingdelay="0.7"
-  wgettimeout=3
-  wgettries=2
-  wgeturl="http://www.google.de"
-  ffrlv6block="2a03"
-  br0ipv4=$(ip addr show br0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
-  br0ipv6=$(ip addr show br0 | grep "inet6\b" | awk '{print $2}' | cut -d/ -f1|grep $ffrlv6block|tail -n1)
-  if [ ! "$SUPERNODE_IPV4_TRANS_ADDR" == "#" ]; then
-    konzintv4=$(echo $SUPERNODE_IPV4_TRANS_ADDR|cut -d"." -f1-3).254
-    konzv4=$(ping -c$pingcountk -i $pingdelay -I $SUPERNODE_TRANS_INTERFACE $konzintv4 >/dev/null 2>/dev/null;echo $?)
-   else
-    konzv4="0"
-   fi
-  if [ ! "$SUPERNODE_IPV6_PREFIX" == "#" ]; then
-    konzintv6=$(echo $SUPERNODE_IPV6_PREFIX|cut -d"/" -f1)1
-    konzv6=$(ping6 -c$pingcountk -i $pingdelay -I $SUPERNODE_TRANS_INTERFACE $konzintv6 >/dev/null 2>/dev/null; echo $?)
-    ffrlv6=$(ping6 -c$pingcount -i $pingdelay -I $br0ipv6 $testipv6a >/dev/null 2>1; echo $?)
-    if [ ! "$ffrlv6" == "0" ]; then
-      ffrlv6=$(ping6 -c$pingcount -i $pingdelay -I $br0ipv6 $testipv6b >/dev/null 2>1; echo $?)
-     fi
-   else
-    konzv6="0"
-    ffrlv6="0"
-   fi
-  ffrlv4=$(wget -4 -t$wgettries -T$wgettimeout --bind-address=$br0ipv4 --spider $wgeturl>/dev/null 2>1;echo $?)
-  if [ ! "$ffrlv4" == "0" ]; then
-    ffrlv4=$(wget -4 -t$wgettries -T$wgettimeout --bind-address=$br0ipv4 --spider $wgeturl>/dev/null 2>1;echo $?)
-   fi
-  v4wgettime=$((time wget -4 -t$wgettries -T$wgettimeout --bind-address=$br0ipv4 --spider $wgeturl ) 2>&1 | grep real | awk '{print $2}' | sed 's/0m//'| tr -d ".s" | sed -e 's/^0*//')
-  v6wgettime=$((time wget -6 -t$wgettries -T$wgettimeout --bind-address=$br0ipv6 --spider $wgeturl ) 2>&1 | grep real | awk '{print $2}' | sed 's/0m//'| tr -d ".s" | sed -e 's/^0*//')
-  echo "P ffrl uplinkfail=$konzv6$konzv4$ffrlv6$ffrlv4.0;0:1;0:1|wgettimev4=$v4wgettime.0;0:200;0:1100|wgettimev6=$v6wgettime.0;0:200;0:1100 vPingErrors KonzV6:$konzv6 KonzV4:$konzv4 PublicV6:$ffrlv6 PublicV4:$ffrlv4"
+testipv4a="8.8.8.8" # google-dns
+testipv4b="1.1.1.1" # cloudflare
+testipv6a="2001:4860:4860::8888" # google-dns
+testipv6b="2620:0:ccc::2" # opendns
+testhost="www.google.com"
+pingcount="2"
+pingdelay="0.3"
+wgettimeout="3"
+wgettries="2"
+wgeturl="http://www.google.de"
+ping4oks=0
+ping6oks=0
+minpingok=$(( $domaincountz ))
+maxpingok=$(( $domaincount +1 ))
+for (( domainindex=0; domainindex<=domaincountz; domainindex++ )); do
+  domainid=${domain_ids[$domainindex]}
+  domainidpad=$(printf "%.2d\n" $domainid)
+  br0ipv4=$(ip addr show ${domain_cliifs[$domainindex]} | grep "inet\b" | awk '{print $2}' | cut -d/ -f1 |grep -v 127.0.0.1|tail -n1)
+  br0ipv6=$(ip addr show ${domain_cliifs[$domainindex]} | grep "inet6\b" | awk '{print $2}' | cut -d/ -f1|grep "$ffrluplinkblock\|$ffnwuplinkblock"|tail -n1)
+  pingv4=$(ping  -c$pingcount -i $pingdelay -I $br0ipv4 $testipv4a >/dev/null 2>&1; echo $?)
+  [ ! "$ping4" == "0" ] &&  ping4=$(ping  -c$pingcount -i $pingdelay -I $br0ipv4 $testipv4b >/dev/null 2>&1; echo $?)
+  [ "$ping4" == "0" ] && ((ping4oks++))
+  ((ping4++))
+  ping6=$(ping6 -c$pingcount -i $pingdelay -I $br0ipv6 $testipv6a >/dev/null 2>&1; echo $?)
+  [ ! "$ping6" == "0" ] &&  pingv=$(ping6 -c$pingcount -i $pingdelay -I $br0ipv6 $testipv6b >/dev/null 2>&1; echo $?)
+  [ "$ping6" == "0" ] && ((ping6oks++))
+  ((ping6++))
+  echo "P ffexit_d$domainidpad ffping4=$ping4.0;0:2;0:2|ffping6=$ping6.0;0:2;0:2"
+ done
+v4wgettime=$((time wget -t$wgettries -T$wgettimeout --bind-address=$br0ipv4 --spider $wgeturl ) 2>&1 | grep real | awk '{print $2}' | sed 's/0m//'| tr -d ",.s" | sed -e 's/^0*//')
+v6wgettime=$((time wget -t$wgettries -T$wgettimeout --bind-address=$br0ipv6 --spider $wgeturl ) 2>&1 | grep real | awk '{print $2}' | sed 's/0m//'| tr -d ",.s" | sed -e 's/^0*//')
+echo "P ffuplink ping4=$ping4oks.0;$minpingok:$maxpingok;$minpingok:$maxpingok|ping6=$ping6oks.0;$minpingok:$maxpingok;$minpingok:$maxpingok|wgettimev4=$v4wgettime.0;0:200;0:1100|wgettimev6=$v6wgettime.0;0:200;0:1100"
 
 ## DNS check
-# dnsmasq running
-  dnsmasqrunning=$(ps ax |grep dnsmasq.pid|grep resolv.conf|wc -l)
-  if [ "$dnsmasqrunning" == "1" ]; then
-    ipv4=$(ip -4 a s br0|grep inet|cut -d" " -f6|cut -d"/" -f1|head -1)
-    ipv6=$(ip -6 a s br0|grep inet|grep -v "deprecated"|cut -d" " -f6|cut -d"/" -f1|head -1)
-    dns4via4=$(dig @$ipv4 A $testhost +time=2|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
-    dns6via4=$(dig @$ipv4 AAAA $testhost +time=2|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
-    dns4via6=$(dig @$ipv6 A $testhost +time=2|grep -v ";"|grep A|grep $testhost|head -1|wc -l)
-    dns6via6=$(dig @$ipv6 AAAA $testhost +time=2|grep -v ";"|grep AAAA|grep $testhost|head -1|wc -l)
-   else
-    dns4via4=0; dns6via4=0; dns4via6=0; dns6via6=0;
-   fi
-  dnsstatus=$dnsmasqrunning$dns4via4$dns6via6$dns4via6$dns6via4
-  echo "P Dns dnsstatus=$dnsstatus.0;11110:11112;11110:11112 dnsmasqrunning=$dnsmasqrunning dns4via4=$dns4via4 dns6via6=$dns6via6 dns4via6=$dns4via6 dns6via4=$dns6via4";
-
+# bind9 running
+dns4v4oks=0
+dns4v6oks=0
+dns6v4oks=0
+dns6v6oks=0
+mindnsok=$(( $domaincountz ))
+maxdnsok=$(( $domaincount +1 ))
+if ( systemctl -q is-active bind9.service ) ; then
+  for (( domainindex=0; domainindex<=domaincountz; domainindex++ )); do
+    domainid=${domain_ids[$domainindex]}
+    domainidpad=$(printf "%.2d\n" $domainid)
+    ipv4=$(ip addr show ${domain_cliifs[$domainindex]} | grep "inet\b" | awk '{print $2}' | cut -d/ -f1 |grep -v 127.0.0.1|tail -n1)
+    ipv6=$(ip addr show ${domain_cliifs[$domainindex]} | grep "inet6\b" | awk '{print $2}' | cut -d/ -f1|grep "$ffrluplinkblock\|$ffnwuplinkblock"|tail -n1)
+    dns4via4=$(dig +short @$ipv4 A    $testhost +time=2|tail -1|wc -l)
+    dns6via4=$(dig +short @$ipv4 AAAA $testhost +time=2|tail -1|wc -l)
+    dns4via6=$(dig +short @$ipv6 A    $testhost +time=2|tail -1|wc -l)
+    dns6via6=$(dig +short @$ipv6 AAAA $testhost +time=2|tail -1|wc -l)
+    dns4v4oks=$((dns4v4oks+dns4via4))
+    dns4v6oks=$((dns4v6oks+dns4via6))
+    dns6v4oks=$((dns6v4oks+dns6via4))
+    dns6v6oks=$((dns6v6oks+dns6via6))
+    echo "P ffdns_d$domainidpad dns4via4=$dns4via4.0;0:2;0:2|dns4via6=$dns4via6.0;0:2;0:2|dns6via4=$dns6via4.0;0:2;0:2|dns6via6=$dns6via6.0;0:2;0:2"
+   done
+ fi
+echo "P dns dns4via4=$dns4v4oks.0;$mindnsok:$maxdnsok;$mindnsok:$maxdnsok|dns4via6=$dns4v6oks.0;$mindnsok:$maxdnsok;$mindnsok:$maxdnsok|dns6via4=$dns6v4oks.0;$mindnsok:$maxdnsok;$mindnsok:$maxdnsok|dns6via6=$dns4v4oks.0;$mindnsok:$maxdnsok;$mindnsok:$maxdnsok";
