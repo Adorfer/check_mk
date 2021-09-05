@@ -16,7 +16,7 @@ wgettries="2"
 wgeturl="http://www.google.de"
 uplinkresult=""
 ping4oks=0
-defaultv4iface=$(ip -4 r | grep '^default' |awk '{print $NF}')
+defaultv4iface=$(ip -4 route | grep '^default' | cut -d " " -f 5)
 if [ ! -z "defaultv4iface" ] ; then
   v4gw=$(ip -4 addr show dev "$defaultv4iface" | awk '$1 ~ /^inet/ { sub("/.*", "", $2); print $2 }')
   br0ipv4=$(ip -4 addr show $defaultv4iface | grep "inet\b" | grep "global" | awk '{print $2}' | cut -d/ -f1 |grep -v 127.0.0.1|tail -n1)
@@ -24,16 +24,16 @@ if [ ! -z "defaultv4iface" ] ; then
   [ ! "$ping4" == "0" ] &&  ping4=$(ping  -c$pingcount -i $pingdelay -I $br0ipv4 $testipv4b >/dev/null 2>&1; echo $?)
   [ "$ping4" == "0" ] && ((ping4oks++))
   ((ping4++))
-  v4wgettime=$((time wget -t$wgettries -T$wgettimeout --bind-address=$br0ipv4 --spider $wgeturl ) 2>&1 | grep real | awk '{print $2}' | sed 's/0m//'| tr -d ",.s" | sed -e 's/^0*//')
+  v4wgettime=$((time wget -t$wgettries -T$wgettimeout --bind-address=$br0ipv4 --spider $wgeturl ) 2>&1 | grep real | awk '{print $2}' | sed 's/0m//' | tr -d ",.s" | sed -e 's/^0*//')
   dns4v4oks=0
-  ipv4=$(ip -4 addr show $defaultv4iface | grep "inet\b" | grep "global" | awk '{print $2}' | cut -d/ -f1 |grep -v 127.0.0.1|tail -n1)
+  ipv4=$(ip -4 addr show $defaultv4iface | grep "inet\b" | grep "global" | awk '{print $2}' | cut -d/ -f1 | grep -v 127.0.0.1 | tail -n1)
   dns4via4=$(dig +short  A $testhost +time=2|tail -1|wc -l)
   dns4v4oks=$((dns4v4oks+dns4via4))
   uplinkresult="ping4=$ping4oks.0;0:2;0:2|wgettimev4=$v4wgettime.0;0:200;0:1100|dns4via4=$dns4v4oks.0;0:2;0:2"
  fi
 
 ping6oks=0
-defaultv6iface=$(ip -6 r | grep '^default' |cut -d " " -f 5)
+defaultv6iface=$(ip -6 route | grep '^default' | cut -d " " -f 5)
 if [ ! -z "$defaultv6iface" ] ; then
   v6gw=$(ip -6 addr show dev "$defaultv6iface" | grep global|awk '$1 ~ /^inet/ { sub("/.*", "", $2); print $2 }')
   br0ipv6=$(ip -6 addr show $defaultv6iface | grep "inet6\b" | grep "global" | awk '{print $2}' | cut -d/ -f1 |tail -n1)
@@ -41,7 +41,7 @@ if [ ! -z "$defaultv6iface" ] ; then
   [ ! "$ping6" == "0" ] &&  ping6=$(ping  -c$pingcount -i $pingdelay -I $br0ipv6 $testipv6b >/dev/null 2>&1; echo $?)
   [ "$ping6" == "0" ] && ((ping6oks++))
   ((ping6++))
-  v6wgettime=$((time wget -t$wgettries -T$wgettimeout --bind-address=$br0ipv6 --spider $wgeturl ) 2>&1 | grep real | awk '{print $2}' | sed 's/0m//'| tr -d ",.s" | sed -e 's/^0*//')
+  v6wgettime=$((time wget -t$wgettries -T$wgettimeout --bind-address=$br0ipv6 --spider $wgeturl ) 2>&1 | grep real | awk '{print $2}' | sed 's/0m//' | tr -d ",.s" | sed -e 's/^0*//')
   dns6v6oks=0
   ipv6=$(ip -6 addr show $defaultv6iface | grep "inet6\b" | grep "global" | awk '{print $2}' | cut -d/ -f1 |tail -n1)
   dns6via6=$(dig +short  AAAA $testhost +time=2|tail -1|wc -l)
@@ -50,4 +50,3 @@ if [ ! -z "$defaultv6iface" ] ; then
   uplinkresult+="ping6=$ping6oks.0;0:2;0:2|wgettimev6=$v4wgettime.0;0:200;0:1100|dns6via6=$dns6v6oks.0;0:2;0:2"
  fi
 echo "P ipuplink $uplinkresult"
-
