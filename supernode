@@ -85,7 +85,7 @@ if [[ $list != *"bat0"* ]]; then
 for b in $list; do
   z=$( batctl -m $b o 2>/dev/null | wc -l )
   if [ $z -ge 1 ]; then
-    router=$(($(batctl -m $b o 2>/dev/null|grep "^\ \*"|wc -l)-0 ))
+    router=$(($(batctl -m $b o 2>/dev/null| uniq -s 2 -w 19 |grep "^\ \*"|wc -l)-0 ))
     clients=$(batctl -m $b tg 2>/dev/null| grep "^\ \*"|grep -cEo "\[.*W.*\]+")
     owngw=$(batctl -m $b gw 2>/dev/null|cut -d" " -f1|sed s/server/1/|sed s/off/0/)
     gateways=$(($(batctl -m $b gwl 2>/dev/null|grep -A 999 outgoingIf|grep -v outgoingIf|wc -l ) + $owngw))
