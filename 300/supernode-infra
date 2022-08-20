@@ -62,7 +62,6 @@ for (( domainindex=0; domainindex<=domaincountz; domainindex++ )); do
    fi
    echo "P dhcp4_d$domainidpad dhtest=$dhtest.0;0:2;0:2|active-leases=$activeleases.0;5:$actwarn;1:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases $dhtestack";
  done
-
 ## FFRL Uplinkcheck
 testipv4a="8.8.8.8" # google-dns
 testipv4b="1.1.1.1" # cloudflare
@@ -71,7 +70,8 @@ testipv6b="2620:0:ccc::2" # opendns
 testhost="www.google.com"
 pingcount="2"
 pingdelay="0.3"
-wgettimeout="3"
+pingtimeout="2"
+wgettimeout="2"
 wgettries="2"
 wgeturl="http://www.google.de"
 ping4oks=0
@@ -83,12 +83,12 @@ for (( domainindex=0; domainindex<=domaincountz; domainindex++ )); do
   domainidpad=$(printf "%.2d\n" $domainid)
   br0ipv4=$(ip addr show ${domain_cliifs[$domainindex]} | grep "inet\b" | awk '{print $2}' | cut -d/ -f1 |grep -v 127.0.0.1|tail -n1)
   br0ipv6=$(ip addr show ${domain_cliifs[$domainindex]} | grep "inet6\b" | awk '{print $2}' | cut -d/ -f1|grep "$ffrluplinkblock\|$ffnwuplinkblock"|tail -n1)
-  pingv4=$(ping  -c$pingcount -i $pingdelay -I $br0ipv4 $testipv4a >/dev/null 2>&1; echo $?)
-  [ ! "$ping4" == "0" ] &&  ping4=$(ping  -c$pingcount -i $pingdelay -I $br0ipv4 $testipv4b >/dev/null 2>&1; echo $?)
+  pingv4=$(ping -c$pingcount -i $pingdelay -W $pingtimeout -I $br0ipv4 $testipv4a >/dev/null 2>&1; echo $?)
+  [ ! "$ping4" == "0" ] &&  ping4=$(ping  -c$pingcount -i $pingdelay -W $pingtimeout -I $br0ipv4 $testipv4b >/dev/null 2>&1; echo $?)
   [ "$ping4" == "0" ] && ((ping4oks++))
   ((ping4++))
-  ping6=$(ping6 -c$pingcount -i $pingdelay -I $br0ipv6 $testipv6a >/dev/null 2>&1; echo $?)
-  [ ! "$ping6" == "0" ] &&  pingv=$(ping6 -c$pingcount -i $pingdelay -I $br0ipv6 $testipv6b >/dev/null 2>&1; echo $?)
+  ping6=$(ping6 -c$pingcount -i $pingdelay -W $pingtimeout -I $br0ipv6 $testipv6a >/dev/null 2>&1; echo $?)
+  [ ! "$ping6" == "0" ] &&  pingv=$(ping6 -c$pingcount -i $pingdelay -W $pingtimeout -I $br0ipv6 $testipv6b >/dev/null 2>&1; echo $?)
   [ "$ping6" == "0" ] && ((ping6oks++))
   ((ping6++))
   echo "P ffexit_d$domainidpad ffping4=$ping4.0;0:2;0:2|ffping6=$ping6.0;0:2;0:2"
