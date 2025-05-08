@@ -2,6 +2,9 @@
 #/usr/lib/check_mk_agent/local
 export LANG=de_DE.UTF-8
 
+# do not execute backup files (~ extension)
+  [ "$(echo ${BASH_SOURCE[0]}|awk '{print substr($0,length($0))}')" == "~" ] && exit 99
+
 ## DNS check
   defaultif=$(/sbin/ip -f inet route | awk '/default/ { print $5 }'|head -1)
   testhost=fileserver.ffnef.de

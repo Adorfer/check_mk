@@ -17,14 +17,15 @@ function ati # ipv4 to longint
  echo $ipno
 }
 
-
+# do not execute backup files (~ extension)
+  [ "$(echo ${BASH_SOURCE[0]}|awk '{print substr($0,length($0))}')" == "~" ] && exit 99
 
 ## Drivespace
-mountswatch='/home/adorfer /mnt /tmp'
-warnpercentfree=10 # Prozent
-alarmpercentfree=5 # Prozent
-freewarn=$(( 100 - $warnpercentfree ))
-freealarm=$(( 100 - $alarmpercentfree ))
+  mountswatch='/home/adorfer /mnt /tmp'
+  warnpercentfree=10 # Prozent
+  alarmpercentfree=5 # Prozent
+  freewarn=$(( 100 - $warnpercentfree ))
+  freealarm=$(( 100 - $alarmpercentfree ))
 
 for mountwatch in $mountswatch; do
   pathf=$(df $mountwatch|tail -1|tr -s " ")

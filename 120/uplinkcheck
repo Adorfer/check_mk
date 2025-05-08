@@ -3,6 +3,9 @@
 export LANG=en_US.UTF-8
 export LANGUAGE=en
 
+# do not execute backup files (~ extension)
+ [ "$(echo ${BASH_SOURCE[0]}|awk '{print substr($0,length($0))}')" == "~" ] && exit 99
+
 ## Internet Uplinkcheck
 testipv4a="8.8.8.8" # google-dns
 testipv4b="1.1.1.1" # cloudflare

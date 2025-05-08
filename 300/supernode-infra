@@ -17,6 +17,9 @@ function ati # ipv4 to longint
  echo $ipno
 }
 
+# do not execute backup files (~ extension)
+  [ "$(echo ${BASH_SOURCE[0]}|awk '{print substr($0,length($0))}')" == "~" ] && exit 99
+
 ffrluplinkblock="2a03:2260"
 ffnwuplinkblock="2a0f:b507"
 
@@ -33,6 +36,24 @@ for domain in "${domain_ids[@]}"; do
  done
 # echo Total domains configured:$domaincount $domaincountz
 
+## tunneldigger
+# wir brauchen nur die "td-open"info
+tdconfig="/srv/tunneldigger/broker/l2tp_broker_domain"
+for b in "${domain_ids[@]}"; do
+  td=$(printf "%.2d\n" $b)
+  br="br$td"
+  tdcfg="$tdconfig$td.cfg"
+  tdenabled=$(systemctl is-enabled tunneldigger@$td.service)
+  tddisabled=0; [ "$tdenabled" == "disabled" ] && tddisabled=1
+  if [ "$tddisabled" == "1" ]; then
+     tdopen[$b]=0 #TunneldiggerOpen for domain x, save for later, here closed
+  else
+    tdopen[$b]=1 #save for later
+  fi
+ done
+
+
+
 ## dhcpd-server leasescheck
 # needs dhtest from https://github.com/saravana815/dhtest compiled
 for (( domainindex=0; domainindex<=domaincountz; domainindex++ )); do
@@ -45,6 +66,8 @@ for (( domainindex=0; domainindex<=domaincountz; domainindex++ )); do
   dhcpend=$(echo $dhcprange|cut -d"-" -f2)
   totalleases=$(($(ati $dhcpend) - $(ati $dhcpstart)))
   remainingleases=$(( $totalleases - $activeleases ))
+  actlwarn=5
+  actlcrit=1
   actwarn=$(($totalleases * 75 / 100))
   actcrit=$(($totalleases * 90 / 100))
   dhtest=1
@@ -60,8 +83,20 @@ for (( domainindex=0; domainindex<=domaincountz; domainindex++ )); do
     rm -f "$clientmac"
     popd >/dev/null
    fi
-   echo "P dhcp4_d$domainidpad dhtest=$dhtest.0;0:2;0:2|active-leases=$activeleases.0;5:$actwarn;1:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases $dhtestack";
+   domnr=$(echo $domainidpad|sed "s/^0*//g")
+#   echo domnr $domnr
+#   echo domainidpad $domainidpad
+   if [ "${tdopen[$domnr]}" == "0" ]; then
+	actlwarn=0
+	actlcrit=0
+	actwarn=4
+	actcrit=6
+     fi
+   echo "P dhcp4_d$domainidpad dhtest=$dhtest.0;0:2;0:2|active-leases=$activeleases.0;$actlwarn:$actwarn;$actlcrit:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases $dhtestack";
  done
+
+
+
 ## FFRL Uplinkcheck
 testipv4a="8.8.8.8" # google-dns
 testipv4b="1.1.1.1" # cloudflare
@@ -69,9 +104,9 @@ testipv6a="2001:4860:4860::8888" # google-dns
 testipv6b="2620:0:ccc::2" # opendns
 testhost="www.google.com"
 pingcount="2"
-pingdelay="0.3"
-pingtimeout="2"
-wgettimeout="2"
+pingdelay="0.2"
+pingtimeout="0.5"
+wgettimeout="1"
 wgettries="2"
 wgeturl="http://www.google.de"
 ping4oks=0
@@ -103,6 +138,7 @@ dns4v4oks=0
 dns4v6oks=0
 dns6v4oks=0
 dns6v6oks=0
+digtimeout=1
 mindnsok=$(( $domaincountz ))
 maxdnsok=$(( $domaincount +1 ))
 if ( systemctl -q is-active bind9.service ) ; then
@@ -111,10 +147,10 @@ if ( systemctl -q is-active bind9.service ) ; then
     domainidpad=$(printf "%.2d\n" $domainid)
     ipv4=$(ip addr show ${domain_cliifs[$domainindex]} | grep "inet\b" | awk '{print $2}' | cut -d/ -f1 |grep -v 127.0.0.1|tail -n1)
     ipv6=$(ip addr show ${domain_cliifs[$domainindex]} | grep "inet6\b" | awk '{print $2}' | cut -d/ -f1|grep "$ffrluplinkblock\|$ffnwuplinkblock"|tail -n1)
-    dns4via4=$(dig +short @$ipv4 A    $testhost +time=2|tail -1|wc -l)
-    dns6via4=$(dig +short @$ipv4 AAAA $testhost +time=2|tail -1|wc -l)
-    dns4via6=$(dig +short @$ipv6 A    $testhost +time=2|tail -1|wc -l)
-    dns6via6=$(dig +short @$ipv6 AAAA $testhost +time=2|tail -1|wc -l)
+    dns4via4=$(dig +short @$ipv4 A    $testhost +time=$digtimeout|tail -1|wc -l)
+    dns6via4=$(dig +short @$ipv4 AAAA $testhost +time=$digtimeout|tail -1|wc -l)
+    dns4via6=$(dig +short @$ipv6 A    $testhost +time=$digtimeout|tail -1|wc -l)
+    dns6via6=$(dig +short @$ipv6 AAAA $testhost +time=$digtimeout|tail -1|wc -l)
     dns4v4oks=$((dns4v4oks+dns4via4))
     dns4v6oks=$((dns4v6oks+dns4via6))
     dns6v4oks=$((dns6v4oks+dns6via4))

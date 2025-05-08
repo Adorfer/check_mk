@@ -7,6 +7,9 @@ function dockerstatus {
   echo $(docker ps -a --format '{{json .}}' |grep ${1}|jq .Status --raw-output)
 }
 
+# do not execute backup files (~ extension)
+  [ "$(echo ${BASH_SOURCE[0]}|awk '{print substr($0,length($0))}')" == "~" ] && exit 99
+
 mariadb_cstat="$(dockerstatus 'mariadb')"
 if [[ "$mariadb_cstat" == "Up"* ]] ; then mariadb_ok=1; else mariadb_ok=0;fi
 dockerresult=$mariadb_ok
