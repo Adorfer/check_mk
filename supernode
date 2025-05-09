@@ -322,8 +322,8 @@ crlimit=$(echo "r=$conntrack_limit*0.1;r/1"|bc)
 echo "P Conntrack conntrack=$conntrack.0;$wlow:$wlimit;$clow:$climit|conntrack_remain=$conntrack_remain.0;$wrlimit:$conntrack_limit;$crlimit:$conntrack_limit Conntrack:$conntrack Conntrack-Remain:$conntrack_remain Conntrack-Limit:$conntrack_limit"
 
 ## Supernode-Role-Swich-status
-if [ -f "/etc/supernode/role/cmkstatus.txt" ]; then
-  cat /etc/supernode/role/cmkstatus.txt
+if [ -f "/etc/supernode/cmk_role_status.txt" ]; then
+  cat /etc/supernode/cmk_role_status.txt
  fi
  
 
