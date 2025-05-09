@@ -25,7 +25,7 @@ ffnwuplinkblock="2a0f:b507"
 
 ## get exspected domains from kea.conf
 keaconf1=/etc/kea/kea.conf
-keaconf1=/etc/kea/kea-dhcp4.conf
+keaconf2=/etc/kea/kea-dhcp4.conf
 [ -f "$keaconf1" ] && keaconf=$keaconf1
 [ -f "$keaconf2" ] && keaconf=$keaconf2
 
