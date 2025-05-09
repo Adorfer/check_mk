@@ -1,0 +1,173 @@
+#!/bin/bash
+#/usr/lib/check_mk_agent/local
+export LANG=de_DE.UTF-8
+
+function confline # get first line from file $1 mathing $2, stripped of # and ; comment lines, stripped spaces and tabs down to spaces, remove trailing ;
+{
+ echo $(cat $1|grep -v '^$\|^\s*\#'|sed -e "s/[[:space:]]\+/ /g"|sed s/^\ //|sed s/\;//|grep -i "$2"|head -n 1)
+}
+
+function ati # ipv4 to longint
+{
+ ip4=$1; ipno=0
+ for (( i=0 ; i<4 ; ++i )); do
+   ((ipno+=${ip4%%.*}*$((254**$((3-${i})))))) # .0 .255 should not be counted
+   ip4=${ip4#*.}
+  done
+ echo $ipno
+}
+
+# do not execute backup files (~ extension)
+  [ "$(echo ${BASH_SOURCE[0]}|awk '{print substr($0,length($0))}')" == "~" ] && exit 99
+
+ffrluplinkblock="2a03:2260"
+ffnwuplinkblock="2a0f:b507"
+
+## get exspected domains from kea.conf
+keaconf1=/etc/kea/kea.conf
+keaconf2=/etc/kea/kea-dhcp4.conf
+[ -f "$keaconf1" ] && keaconf=$keaconf1
+[ -f "$keaconf2" ] && keaconf=$keaconf2
+
+domain_ids=($(cat $keaconf|jq -r '.Dhcp4.subnet4 |map(.id)'|grep .[0-9]|tr -d ', '))
+domain_v4ranges=($(cat $keaconf|jq -r '.Dhcp4.subnet4 |map(.pools)'|grep pool|cut -d: -f 2|tr -d '" '))
+domain_cliifs=($(cat $keaconf|jq -r '.Dhcp4.subnet4 |map(.interface)'|grep '"'|tr -d '", '))
+domain_dbpsql=$(cat $keaconf|grep -A10 database|grep type|grep postgres|wc -l)
+domain_dbmem=$(cat $keaconf|grep -A10 database|grep type|grep memfile|wc -l)
+
+domaincount=0
+for domain in "${domain_ids[@]}"; do
+  domaincountz=$domaincount
+# echo "Domain:$domain cli_if:${domain_cliifs[$domaincount]} iprange:${domain_v4ranges[$domaincount]} "
+  ((domaincount++))
+ done
+# echo Total domains configured:$domaincount $domaincountz
+
+## tunneldigger
+# wir brauchen nur die "td-open"info
+tdconfig="/srv/tunneldigger/broker/l2tp_broker_domain"
+for b in "${domain_ids[@]}"; do
+  td=$(printf "%.2d\n" $b)
+  br="br$td"
+  tdcfg="$tdconfig$td.cfg"
+  tdenabled=$(systemctl is-enabled tunneldigger@$td.service)
+  tddisabled=0; [ "$tdenabled" == "disabled" ] && tddisabled=1
+  if [ "$tddisabled" == "1" ]; then
+     tdopen[$b]=0 #TunneldiggerOpen for domain x, save for later, here closed
+  else
+    tdopen[$b]=1 #save for later
+  fi
+ done
+
+
+
+## dhcpd-server leasescheck
+# needs dhtest from https://github.com/saravana815/dhtest compiled
+for (( domainindex=0; domainindex<=domaincountz; domainindex++ )); do
+  domainid=${domain_ids[$domainindex]}
+  domainidpad=$(printf "%.2d\n" $domainid)
+  if [ "$domain_dbpsql" == "1" ]; then
+    activeleases=$(psql kea_leases -U kea -h localhost -c "COPY(SELECT leases FROM lease4_stat WHERE subnet_id=$domainid AND state=0) TO STDOUT CSV;")
+   fi
+  if [ "$domain_dbmem" == "1" ]; then dbmemfile="/var/lib/kea/kea-leases4.csv"
+    activeleases=$(awk -F',|"' '{print $(NF-6)}' $dbmemfile|grep $domainid|wc -l)
+   fi
+  [ -z $activeleases ] && activeleases=0
+  dhcprange=${domain_v4ranges[$domainindex]}
+  dhcpstart=$(echo $dhcprange|cut -d"-" -f1)
+  dhcpend=$(echo $dhcprange|cut -d"-" -f2)
+  totalleases=$(($(ati $dhcpend) - $(ati $dhcpstart)))
+  remainingleases=$(( $totalleases - $activeleases ))
+  actlwarn=5
+  actlcrit=1
+  actwarn=$(($totalleases * 75 / 100))
+  actcrit=$(($totalleases * 90 / 100))
+  dhtest=1
+  if [ ! -z $(command -v dhtest) ] ; then
+    pushd /tmp >/dev/null
+    clientmac=ca:b1:e9:fa:b1:77
+    dhtestack=$(dhtest -i ${domain_cliifs[$domainindex]} -m $clientmac -h check_mk -T 7|grep "DHCP ack received")
+    dhtest=0
+    if [ -n "$dhtestack" ] ; then
+      dhtest=$(echo $dhtestack|wc -l)
+      dhtestip=$(echo $dhtestack|cut -d":" -f2)
+     fi
+    rm -f "$clientmac"
+    popd >/dev/null
+   fi
+   domnr=$(echo $domainidpad|sed "s/^0*//g")
+#   echo domnr $domnr
+#   echo domainidpad $domainidpad
+   if [ "${tdopen[$domnr]}" == "0" ]; then
+	actlwarn=0
+	actlcrit=0
+	actwarn=4
+	actcrit=6
+     fi
+   echo "P dhcp4_d$domainidpad dhtest=$dhtest.0;0:2;0:2|active-leases=$activeleases.0;$actlwarn:$actwarn;$actlcrit:$actcrit active:$activeleases remaining:$remainingleases pool=$totalleases $dhtestack";
+ done
+
+
+
+## FFRL Uplinkcheck
+testipv4a="8.8.8.8" # google-dns
+testipv4b="1.1.1.1" # cloudflare
+testipv6a="2001:4860:4860::8888" # google-dns
+testipv6b="2620:0:ccc::2" # opendns
+testhost="www.google.com"
+pingcount="2"
+pingdelay="1"
+pingtimeout="1"
+wgettimeout="1"
+wgettries="2"
+wgeturl="http://www.google.de"
+ping4oks=0
+ping6oks=0
+minpingok=$(( $domaincountz ))
+maxpingok=$(( $domaincount +1 ))
+for (( domainindex=0; domainindex<=domaincountz; domainindex++ )); do
+  domainid=${domain_ids[$domainindex]}
+  domainidpad=$(printf "%.2d\n" $domainid)
+  br0ipv4=$(ip addr show ${domain_cliifs[$domainindex]} | grep "inet\b" | awk '{print $2}' | cut -d/ -f1 |grep -v 127.0.0.1|tail -n1)
+  br0ipv6=$(ip addr show ${domain_cliifs[$domainindex]} | grep "inet6\b" | awk '{print $2}' | cut -d/ -f1|grep "$ffrluplinkblock\|$ffnwuplinkblock"|tail -n1)
+  pingv4=$(ping -c$pingcount -i $pingdelay -W $pingtimeout -I $br0ipv4 $testipv4a >/dev/null 2>&1; echo $?)
+  [ ! "$ping4" == "0" ] &&  ping4=$(ping  -c$pingcount -i $pingdelay -W $pingtimeout -I $br0ipv4 $testipv4b >/dev/null 2>&1; echo $?)
+  [ "$ping4" == "0" ] && ((ping4oks++))
+  ((ping4++))
+  ping6=$(ping6 -c$pingcount -i $pingdelay -W $pingtimeout -I $br0ipv6 $testipv6a >/dev/null 2>&1; echo $?)
+  [ ! "$ping6" == "0" ] &&  pingv=$(ping6 -c$pingcount -i $pingdelay -W $pingtimeout -I $br0ipv6 $testipv6b >/dev/null 2>&1; echo $?)
+  [ "$ping6" == "0" ] && ((ping6oks++))
+  ((ping6++))
+  echo "P ffexit_d$domainidpad ffping4=$ping4.0;0:2;0:2|ffping6=$ping6.0;0:2;0:2"
+ done
+v4wgettime=$((time wget -t$wgettries -T$wgettimeout --bind-address=$br0ipv4 --spider $wgeturl ) 2>&1 | grep real | awk '{print $2}' | sed 's/0m//'| tr -d ",.s" | sed -e 's/^0*//')
+v6wgettime=$((time wget -t$wgettries -T$wgettimeout --bind-address=$br0ipv6 --spider $wgeturl ) 2>&1 | grep real | awk '{print $2}' | sed 's/0m//'| tr -d ",.s" | sed -e 's/^0*//')
+echo "P ffuplink ping4=$ping4oks.0;$minpingok:$maxpingok;$minpingok:$maxpingok|ping6=$ping6oks.0;$minpingok:$maxpingok;$minpingok:$maxpingok|wgettimev4=$v4wgettime.0;0:200;0:1100|wgettimev6=$v6wgettime.0;0:200;0:1100"
+
+## DNS check
+# bind9 running
+dns4v4oks=0
+dns4v6oks=0
+dns6v4oks=0
+dns6v6oks=0
+digtimeout=1
+mindnsok=$(( $domaincountz ))
+maxdnsok=$(( $domaincount +1 ))
+if ( systemctl -q is-active bind9.service ) ; then
+  for (( domainindex=0; domainindex<=domaincountz; domainindex++ )); do
+    domainid=${domain_ids[$domainindex]}
+    domainidpad=$(printf "%.2d\n" $domainid)
+    ipv4=$(ip addr show ${domain_cliifs[$domainindex]} | grep "inet\b" | awk '{print $2}' | cut -d/ -f1 |grep -v 127.0.0.1|tail -n1)
+    ipv6=$(ip addr show ${domain_cliifs[$domainindex]} | grep "inet6\b" | awk '{print $2}' | cut -d/ -f1|grep "$ffrluplinkblock\|$ffnwuplinkblock"|tail -n1)
+    dns4via4=$(dig +short @$ipv4 A    $testhost +time=$digtimeout|tail -1|wc -l)
+    dns6via4=$(dig +short @$ipv4 AAAA $testhost +time=$digtimeout|tail -1|wc -l)
+    dns4via6=$(dig +short @$ipv6 A    $testhost +time=$digtimeout|tail -1|wc -l)
+    dns6via6=$(dig +short @$ipv6 AAAA $testhost +time=$digtimeout|tail -1|wc -l)
+    dns4v4oks=$((dns4v4oks+dns4via4))
+    dns4v6oks=$((dns4v6oks+dns4via6))
+    dns6v4oks=$((dns6v4oks+dns6via4))
+    dns6v6oks=$((dns6v6oks+dns6via6))
+    echo "P ffdns_d$domainidpad dns4via4=$dns4via4.0;0:2;0:2|dns4via6=$dns4via6.0;0:2;0:2|dns6via4=$dns6via4.0;0:2;0:2|dns6via6=$dns6via6.0;0:2;0:2"
+   done
+ fi
+echo "P dns dns4via4=$dns4v4oks.0;$mindnsok:$maxdnsok;$mindnsok:$maxdnsok|dns4via6=$dns4v6oks.0;$mindnsok:$maxdnsok;$mindnsok:$maxdnsok|dns6via4=$dns6v4oks.0;$mindnsok:$maxdnsok;$mindnsok:$maxdnsok|dns6via6=$dns4v4oks.0;$mindnsok:$maxdnsok;$mindnsok:$maxdnsok";
