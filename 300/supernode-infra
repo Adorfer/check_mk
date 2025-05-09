@@ -24,6 +24,11 @@ ffrluplinkblock="2a03:2260"
 ffnwuplinkblock="2a0f:b507"
 
 ## get exspected domains from kea.conf
+keaconf1=/etc/kea/kea.conf
+keaconf1=/etc/kea/kea-dhcp4.conf
+[ -f "$keaconf1" ] && keaconf=$keaconf1
+[ -f "$keaconf2" ] && keaconf=$keaconf2
+
 keaconf="/etc/kea/kea.conf"
 domain_ids=($(cat $keaconf|jq -r '.Dhcp4.subnet4 |map(.id)'|grep .[0-9]|tr -d ', '))
 domain_v4ranges=($(cat $keaconf|jq -r '.Dhcp4.subnet4 |map(.pools)'|grep pool|cut -d: -f 2|tr -d '" '))
