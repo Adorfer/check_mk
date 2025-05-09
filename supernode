@@ -6,6 +6,11 @@ export LANG=de_DE.UTF-8
 if [ -f "/etc/supernode/cmk_supernode_status.txt" ]; then
   cat /etc/supernode/cmk_supernode_status.txt
  fi
+
+## Supernode-exit-status
+if [ -f "/etc/supernode/cmk_supernode_exit_status.txt" ]; then
+  cat /etc/supernode/cmk_supernode_exit_status.txt
+ fi
  
 ## Supernode-Role-Swich-status
 if [ -f "/etc/supernode/cmk_role_status.txt" ]; then
