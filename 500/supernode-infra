@@ -69,7 +69,8 @@ for (( domainindex=0; domainindex<=domaincountz; domainindex++ )); do
   if [ "$domain_dbpsql" == "1" ]; then
     activeleases=$(psql kea_leases -U kea -h localhost -c "COPY(SELECT leases FROM lease4_stat WHERE subnet_id=$domainid AND state=0) TO STDOUT CSV;")
    fi
-  if [ "$domain_dbmem" == "1" ]; then dbmemfile="/var/lib/kea/kea-leases4.csv"
+  if [ "$domain_dbmem" == "1" ]; then 
+    dbmemfile="/var/lib/kea/kea-leases4.csv"
     activeleases=$(awk -F',|"' '{print $(NF-6)}' $dbmemfile|grep $domainid|wc -l)
    fi
   [ -z $activeleases ] && activeleases=0
