@@ -20,7 +20,6 @@ wgettries="2"
 wgeturl="http://www.google.de"
 uplinkresult=""
 ping4oks=0
-defaultv4iface=$(ip -4 route show table all | grep '^default' | awk '{for (I=1;I<NF;I++) if ($I == "dev") print $(I+1)}' | head -1)
 defaultv4iface=$(sed -n -e 's/^.*dev\ //p' <<< $(ip -4 r s|grep default)|cut -d" " -f1)
 
 if [ ! -z "defaultv4iface" ] ; then
@@ -39,7 +38,6 @@ if [ ! -z "defaultv4iface" ] ; then
  fi
 
 ping6oks=0
-defaultv6iface=$(ip -6 route show table all | grep '^default' | awk '{for (I=1;I<NF;I++) if ($I == "dev") print $(I+1)}' | head -1)
 defaultv6iface=$(sed -n -e 's/^.*dev\ //p' <<< $(ip -6 r s|grep default)|cut -d" " -f1)
 if [ ! -z "$defaultv6iface" ] ; then
   v6gw=$(ip -6 addr show dev "$defaultv6iface" | grep global|awk '$1 ~ /^inet/ { sub("/.*", "", $2); print $2 }')
@@ -54,6 +52,6 @@ if [ ! -z "$defaultv6iface" ] ; then
   dns6via6=$(dig +short  AAAA $testhost +time=2|tail -1|wc -l)
   dns6v6oks=$((dns6v6oks+dns6via6))
   [ ! -z "$uplinkresult" ] && uplinkresult+="|"
-  uplinkresult+="ping6=$ping6oks.0;0.5:1.5;0.5:1.5|wgettimev6=$v4wgettime.0;0:200;0:1100|dns6via6=$dns6v6oks.0;0.5:1.5;0.5:1.5"
+  uplinkresult+="ping6=$ping6oks.0;0.5:1.5;0.5:1.5|wgettimev6=$v6wgettime.0;0:200;0:1100|dns6via6=$dns6v6oks.0;0.5:1.5;0.5:1.5"
  fi
 echo "P ipuplink $uplinkresult"
