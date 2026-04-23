@@ -2,19 +2,14 @@
 #/usr/lib/check_mk_agent/local
 export LANG=de_DE.UTF-8
 
-## Supernode-status
-if [ -f "/etc/supernode/cmk_supernode_status.txt" ]; then
-  cat /etc/supernode/cmk_supernode_status.txt
- fi
+# do not execute backup files (~ extension)
+ [ "$(echo ${BASH_SOURCE[0]}|awk '{print substr($0,length($0))}')" == "~" ] && exit 99
 
-## Supernode-exit-status
-if [ -f "/etc/supernode/cmk_supernode_exit_status.txt" ]; then
-  cat /etc/supernode/cmk_supernode_exit_status.txt
- fi
- 
-## Supernode-Role-Swich-status
-if [ -f "/etc/supernode/cmk_role_status.txt" ]; then
-  cat /etc/supernode/cmk_role_status.txt
- fi
- 
+snstatusdir="/etc/supernode"
 
+snstatusfiles="chklocalstatus.txt cmk_role_status.txt cmk_supernode_exit_status.txt cmk_supernode_status.txt"
+
+for snstatusfile in ${snstatusfiles}; do
+  filefull=${snstatusdir}/${snstatusfile}
+  [ -f ${filefull} ] && cat ${filefull}
+ done
