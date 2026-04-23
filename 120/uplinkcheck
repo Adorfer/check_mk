@@ -14,17 +14,20 @@ testipv6b="2620:0:ccc::2" # opendns
 testhost="www.google.com"
 pingcount="2"
 pingdelay="0.3"
+pingtimeout="2"
 wgettimeout="3"
 wgettries="2"
 wgeturl="http://www.google.de"
 uplinkresult=""
 ping4oks=0
 defaultv4iface=$(ip -4 route show table all | grep '^default' | awk '{for (I=1;I<NF;I++) if ($I == "dev") print $(I+1)}' | head -1)
+defaultv4iface=$(sed -n -e 's/^.*dev\ //p' <<< $(ip -4 r s|grep default)|cut -d" " -f1)
+
 if [ ! -z "defaultv4iface" ] ; then
   v4gw=$(ip -4 addr show dev "$defaultv4iface" | awk '$1 ~ /^inet/ { sub("/.*", "", $2); print $2 }')
   br0ipv4=$(ip -4 addr show $defaultv4iface | grep "inet\b" | grep "global" | awk '{print $2}' | cut -d/ -f1 |grep -v 127.0.0.1|tail -n1)
-  pingv4=$(ping  -c$pingcount -i $pingdelay -I $br0ipv4 $testipv4a >/dev/null 2>&1; echo $?)
-  [ ! "$ping4" == "0" ] &&  ping4=$(ping  -c$pingcount -i $pingdelay -I $br0ipv4 $testipv4b >/dev/null 2>&1; echo $?)
+  pingv4=$(ping -W $pingtimeout -c$pingcount -i $pingdelay -I $br0ipv4 $testipv4a >/dev/null 2>&1; echo $?)
+  [ ! "$ping4" == "0" ] &&  ping4=$(ping -W $pingtimeout -c$pingcount -i $pingdelay -I $br0ipv4 $testipv4b >/dev/null 2>&1; echo $?)
   [ "$ping4" == "0" ] && ((ping4oks++))
   ((ping4++))
   v4wgettime=$((time wget -t$wgettries -T$wgettimeout --bind-address=$br0ipv4 --spider $wgeturl ) 2>&1 | grep real | awk '{print $2}' | sed 's/0m//' | tr -d ",.s" | sed -e 's/^0*//')
@@ -37,11 +40,12 @@ if [ ! -z "defaultv4iface" ] ; then
 
 ping6oks=0
 defaultv6iface=$(ip -6 route show table all | grep '^default' | awk '{for (I=1;I<NF;I++) if ($I == "dev") print $(I+1)}' | head -1)
+defaultv6iface=$(sed -n -e 's/^.*dev\ //p' <<< $(ip -6 r s|grep default)|cut -d" " -f1)
 if [ ! -z "$defaultv6iface" ] ; then
   v6gw=$(ip -6 addr show dev "$defaultv6iface" | grep global|awk '$1 ~ /^inet/ { sub("/.*", "", $2); print $2 }')
   br0ipv6=$(ip -6 addr show $defaultv6iface | grep "inet6\b" | grep "global" | awk '{print $2}' | cut -d/ -f1 |tail -n1)
-  pingv6=$(ping  -c$pingcount -i $pingdelay -I $br0ipv6 $testipv6a >/dev/null 2>&1; echo $?)
-  [ ! "$ping6" == "0" ] &&  ping6=$(ping  -c$pingcount -i $pingdelay -I $br0ipv6 $testipv6b >/dev/null 2>&1; echo $?)
+  pingv6=$(ping -W $pingtimeout -c$pingcount -i $pingdelay -I $br0ipv6 $testipv6a >/dev/null 2>&1; echo $?)
+  [ ! "$ping6" == "0" ] &&  ping6=$(ping -W $pingtimeout -c$pingcount -i $pingdelay -I $br0ipv6 $testipv6b >/dev/null 2>&1; echo $?)
   [ "$ping6" == "0" ] && ((ping6oks++))
   ((ping6++))
   v6wgettime=$((time wget -t$wgettries -T$wgettimeout --bind-address=$br0ipv6 --spider $wgeturl ) 2>&1 | grep real | awk '{print $2}' | sed 's/0m//' | tr -d ",.s" | sed -e 's/^0*//')
